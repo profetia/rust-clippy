@@ -445,7 +445,8 @@ impl<'tcx> LateLintPass<'tcx> for StringToString {
 
         if let ExprKind::MethodCall(path, self_arg, [], _) = &expr.kind
             && path.ident.name == sym::to_string
-            && let ty = cx.typeck_results().expr_ty(self_arg)
+            && let ty_raw = cx.typeck_results().expr_ty(self_arg)
+            && let ty = ty_raw.peel_refs()
             && is_type_lang_item(cx, ty, LangItem::String)
         {
             #[expect(clippy::collapsible_span_lint_calls, reason = "rust-clippy#7797")]
