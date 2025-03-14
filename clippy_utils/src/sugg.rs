@@ -53,7 +53,8 @@ impl<'a> Sugg<'a> {
     /// Prepare a suggestion from an expression.
     pub fn hir_opt(cx: &LateContext<'_>, expr: &hir::Expr<'_>) -> Option<Self> {
         let ctxt = expr.span.ctxt();
-        let get_snippet = |span| snippet_with_context(cx, span, ctxt, "", &mut Applicability::Unspecified).0;
+        let get_snippet =
+            |span: Span| snippet_with_context(cx, span.source_callsite(), ctxt, "", &mut Applicability::Unspecified).0;
         snippet_opt(cx, expr.span).map(|_| Self::hir_from_snippet(expr, get_snippet))
     }
 
