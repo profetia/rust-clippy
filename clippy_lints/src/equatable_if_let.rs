@@ -1,11 +1,15 @@
+use clippy_config::Conf;
 use clippy_utils::diagnostics::span_lint_and_sugg;
+use clippy_utils::is_in_const_context;
+use clippy_utils::msrvs::Msrv;
+use clippy_utils::qualify_min_const_fn::is_stable_const_fn;
 use clippy_utils::source::snippet_with_context;
 use clippy_utils::ty::implements_trait;
 use rustc_errors::Applicability;
 use rustc_hir::{Expr, ExprKind, Pat, PatKind};
 use rustc_lint::{LateContext, LateLintPass, LintContext};
-use rustc_middle::ty::Ty;
-use rustc_session::declare_lint_pass;
+use rustc_middle::ty::{AssocItem, Ty};
+use rustc_session::impl_lint_pass;
 
 declare_clippy_lint! {
     /// ### What it does
@@ -37,7 +41,17 @@ declare_clippy_lint! {
     "using pattern matching instead of equality"
 }
 
-declare_lint_pass!(PatternEquality => [EQUATABLE_IF_LET]);
+pub struct PatternEquality {
+    msrv: Msrv,
+}
+
+impl PatternEquality {
+    pub fn new(conf: &'static Conf) -> Self {
+        Self { msrv: conf.msrv }
+    }
+}
+
+impl_lint_pass!(PatternEquality => [EQUATABLE_IF_LET]);
 
 /// detects if pattern matches just one thing
 fn unary_pattern(pat: &Pat<'_>) -> bool {
@@ -60,12 +74,21 @@ fn unary_pattern(pat: &Pat<'_>) -> bool {
     }
 }
 
-fn is_structural_partial_eq<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, other: Ty<'tcx>) -> bool {
-    if let Some(def_id) = cx.tcx.lang_items().eq_trait() {
-        implements_trait(cx, ty, def_id, &[other.into()])
-    } else {
-        false
+fn is_structural_partial_eq<'tcx>(cx: &LateContext<'tcx>, ty: Ty<'tcx>, other: Ty<'tcx>, msrv: Msrv) -> bool {
+    if let Some(def_id) = cx.tcx.lang_items().eq_trait()
+        && implements_trait(cx, ty, def_id, &[other.into()])
+    {
+        if !is_in_const_context(cx) {
+            return true;
+        }
+
+        if let Some(AssocItem { def_id, .. }) = cx.tcx.provided_trait_methods(def_id).next() {
+            return is_stable_const_fn(cx, *def_id, msrv);
+        }
+
+        return false;
     }
+    false
 }
 
 /// Check if the pattern has any type mismatch that would prevent it from being used in an equality
@@ -110,7 +133,7 @@ impl<'tcx> LateLintPass<'tcx> for PatternEquality {
             let pat_ty = cx.typeck_results().pat_ty(let_expr.pat);
             let mut applicability = Applicability::MachineApplicable;
 
-            if is_structural_partial_eq(cx, exp_ty, pat_ty) && !contains_type_mismatch(cx, let_expr.pat) {
+            if is_structural_partial_eq(cx, exp_ty, pat_ty, self.msrv) && !contains_type_mismatch(cx, let_expr.pat) {
                 let pat_str = match let_expr.pat.kind {
                     PatKind::Struct(..) => format!(
                         "({})",

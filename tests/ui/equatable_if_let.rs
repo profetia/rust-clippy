@@ -139,3 +139,31 @@ mod issue8710 {
         }
     }
 }
+
+mod issue15376 {
+    const _: i32 = if let Some(true) = Some(false) { 0 } else { 1 };
+    //~^ equatable_if_let
+    const _: i32 = if let Ok(true) = Ok::<bool, ()>(false) { 0 } else { 1 };
+    //~^ equatable_if_let
+    const _: i32 = if let (true, true) = (false, false) { 0 } else { 1 };
+    //~^ equatable_if_let
+
+    #[derive(Eq, PartialEq)]
+    enum OneTwo {
+        One(i32),
+        Two(i32),
+    }
+    const _: i32 = if let OneTwo::One(1) = OneTwo::Two(1) { 0 } else { 1 };
+    //~^ equatable_if_let
+
+    #[derive(Eq, PartialEq)]
+    struct MyStruct {
+        v: i32,
+    }
+    const _: i32 = if let MyStruct { v: 1 } = (MyStruct { v: 2 }) {
+        //~^ equatable_if_let
+        0
+    } else {
+        1
+    };
+}

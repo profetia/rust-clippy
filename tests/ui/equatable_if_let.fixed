@@ -139,3 +139,31 @@ mod issue8710 {
         }
     }
 }
+
+mod issue15376 {
+    const _: i32 = if matches!(Some(false), Some(true)) { 0 } else { 1 };
+    //~^ equatable_if_let
+    const _: i32 = if matches!(Ok::<bool, ()>(false), Ok(true)) { 0 } else { 1 };
+    //~^ equatable_if_let
+    const _: i32 = if matches!((false, false), (true, true)) { 0 } else { 1 };
+    //~^ equatable_if_let
+
+    #[derive(Eq, PartialEq)]
+    enum OneTwo {
+        One(i32),
+        Two(i32),
+    }
+    const _: i32 = if matches!(OneTwo::Two(1), OneTwo::One(1)) { 0 } else { 1 };
+    //~^ equatable_if_let
+
+    #[derive(Eq, PartialEq)]
+    struct MyStruct {
+        v: i32,
+    }
+    const _: i32 = if matches!((MyStruct { v: 2 }), MyStruct { v: 1 }) {
+        //~^ equatable_if_let
+        0
+    } else {
+        1
+    };
+}
