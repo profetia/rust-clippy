@@ -179,3 +179,15 @@ fn mem_replace_option_with_some_bad_msrv() {
     let mut an_option = Some(0);
     let replaced = mem::replace(&mut an_option, Some(1));
 }
+
+fn dest_from_macro() {
+    macro_rules! borrow_mut {
+        ($x:expr) => {
+            &mut $x
+        };
+    }
+
+    let mut text = String::from("foo");
+    let replaced = std::mem::replace(borrow_mut!(text), String::default());
+    //~^ mem_replace_with_default
+}
