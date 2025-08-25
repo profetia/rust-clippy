@@ -133,3 +133,16 @@ fn main() {
 
     -5 == (u32 as i32);
 }
+
+#[allow(clippy::no_effect)]
+fn as_expr_from_macro() {
+    macro_rules! add_one {
+        ($x:expr) => {
+            $x + 1
+        };
+    }
+
+    let x: u8 = 1;
+    (add_one!(x) as u32) > 300;
+    //~^ invalid_upcast_comparisons
+}
