@@ -1,7 +1,7 @@
 use clippy_utils::diagnostics::span_lint_and_sugg;
 use clippy_utils::higher::{VecInitKind, get_vec_init_kind};
 use clippy_utils::res::MaybeResPath;
-use clippy_utils::source::snippet;
+use clippy_utils::source::snippet_with_context;
 use clippy_utils::visitors::for_each_local_use_after_expr;
 use clippy_utils::{get_parent_expr, sym};
 use core::ops::ControlFlow;
@@ -133,8 +133,10 @@ impl VecPushSearcher {
         }
         s.push_str(self.name.as_str());
         if let Some(span) = self.let_ty_span {
+            let (ty_snip, _) =
+                snippet_with_context(cx, span, self.err_span.ctxt(), "_", &mut Applicability::HasPlaceholders);
             s.push_str(": ");
-            s.push_str(&snippet(cx, span, "_"));
+            s.push_str(&ty_snip);
         }
         s.push_str(" = vec![..];");
 

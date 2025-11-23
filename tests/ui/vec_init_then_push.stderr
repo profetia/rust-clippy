@@ -78,5 +78,15 @@ LL | /     let mut v = Vec::new();
 LL | |     v.push((0i32, 0i32));
    | |_________________________^ help: consider using the `vec![]` macro: `let v = vec![..];`
 
-error: aborting due to 8 previous errors
+error: calls to `push` immediately after creation
+  --> tests/ui/vec_init_then_push.rs:137:5
+   |
+LL | /     let mut v: vector![i32] = Vec::new();
+LL | |
+LL | |     v.push(0);
+LL | |     v.push(1);
+LL | |     v.push(2);
+   | |______________^ help: consider using the `vec![]` macro: `let v: vector![i32] = vec![..];`
+
+error: aborting due to 9 previous errors
 

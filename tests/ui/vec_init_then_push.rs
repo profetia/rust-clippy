@@ -126,3 +126,17 @@ fn f() {
     v.push((0i32, 0i32));
     let y = v[0].0.abs();
 }
+
+fn wrongly_unmangled_macros() {
+    macro_rules! vector {
+        ($type:ty) => {
+            Vec<$type>
+        };
+    }
+
+    let mut v: vector![i32] = Vec::new();
+    //~^ vec_init_then_push
+    v.push(0);
+    v.push(1);
+    v.push(2);
+}
