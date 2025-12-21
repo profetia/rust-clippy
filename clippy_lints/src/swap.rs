@@ -1,6 +1,6 @@
 use clippy_utils::diagnostics::{span_lint_and_sugg, span_lint_and_then};
 use clippy_utils::res::{MaybeDef, MaybeResPath};
-use clippy_utils::source::{snippet_indent, snippet_with_context};
+use clippy_utils::source::{snippet_indent, snippet_with_context, walk_span_to_context};
 use clippy_utils::sugg::Sugg;
 
 use clippy_utils::{can_mut_borrow_both, eq_expr_value, is_in_const_context, std_or_core};
@@ -211,17 +211,23 @@ fn check_suspicious_swap(cx: &LateContext<'_>, block: &Block<'_>) {
         if let Some((lhs0, rhs0)) = parse(first)
             && let Some((lhs1, rhs1)) = parse(second)
             && first.span.eq_ctxt(second.span)
-			&& !first.span.in_external_macro(cx.sess().source_map())
+            && !first.span.in_external_macro(cx.sess().source_map())
             && is_same(cx, lhs0, rhs1)
             && is_same(cx, lhs1, rhs0)
-			&& !is_same(cx, lhs1, rhs1) // Ignore a = b; a = a (#10421)
-            && let Some(lhs_sugg) = match &lhs0 {
-                ExprOrIdent::Expr(expr) => Sugg::hir_opt(cx, expr),
-                ExprOrIdent::Ident(ident) => Some(Sugg::NonParen(ident.as_str().into())),
-            }
-            && let Some(rhs_sugg) = Sugg::hir_opt(cx, rhs0)
+            && !is_same(cx, lhs1, rhs1)
+        // Ignore a = b; a = a (#10421)
         {
-            let span = first.span.to(rhs1.span);
+            let rhs1_span = walk_span_to_context(rhs1.span, second.span.ctxt()).unwrap_or(rhs1.span);
+            let mut applicability = Applicability::MaybeIncorrect;
+            let lhs_sugg = match &lhs0 {
+                ExprOrIdent::Expr(expr) => {
+                    Sugg::hir_with_context(cx, expr, first.span.ctxt(), "..", &mut applicability)
+                },
+                ExprOrIdent::Ident(ident) => Sugg::NonParen(ident.as_str().into()),
+            };
+            let rhs_sugg = Sugg::hir_with_context(cx, rhs0, first.span.ctxt(), "..", &mut applicability);
+
+            let span = first.span.to(rhs1_span);
             let Some(sugg) = std_or_core(cx) else { return };
             span_lint_and_then(
                 cx,
@@ -233,7 +239,7 @@ fn check_suspicious_swap(cx: &LateContext<'_>, block: &Block<'_>) {
                         span,
                         "try",
                         format!("{sugg}::mem::swap({}, {})", lhs_sugg.mut_addr(), rhs_sugg.mut_addr()),
-                        Applicability::MaybeIncorrect,
+                        applicability,
                     );
                     diag.note(format!("or maybe you should use `{sugg}::mem::replace`?"));
                 },

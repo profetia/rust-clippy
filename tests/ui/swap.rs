@@ -241,3 +241,22 @@ const fn issue_10421(x: u32) -> u32 {
     let a = a;
     a
 }
+
+fn suggests_wrongly_in_macros() {
+    struct Container<T> {
+        value: T,
+    }
+
+    let mut a = Container { value: 5 };
+    let mut b = Container { value: 10 };
+
+    macro_rules! dot_value {
+        ($obj:expr) => {
+            $obj.value
+        };
+    }
+
+    dot_value!(a) = dot_value!(b);
+    //~^ almost_swapped
+    dot_value!(b) = dot_value!(a);
+}

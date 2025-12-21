@@ -173,5 +173,15 @@ LL | |     s.0.y = t;
    |
    = note: or maybe you should use `std::mem::replace`?
 
-error: aborting due to 17 previous errors
+error: this looks like you are trying to swap `dot_value!(a)` and `dot_value!(b)`
+  --> tests/ui/swap.rs:259:5
+   |
+LL | /     dot_value!(a) = dot_value!(b);
+LL | |
+LL | |     dot_value!(b) = dot_value!(a);
+   | |_________________________________^ help: try: `std::mem::swap(&mut dot_value!(a), &mut dot_value!(b))`
+   |
+   = note: or maybe you should use `std::mem::replace`?
+
+error: aborting due to 18 previous errors
 
