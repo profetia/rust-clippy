@@ -76,7 +76,16 @@ impl<'tcx> LateLintPass<'tcx> for ClonedRefToSliceRefs<'_> {
             && let ExprKind::MethodCall(path, val, _, _) = item.kind
             && let opt_parent_def = cx.ty_based_def(item).opt_parent(cx)
             && (opt_parent_def.is_diag_item(cx, sym::Clone)
-                || opt_parent_def.is_some_and(|def| is_clone_like(cx, path.ident.name, def)))
+                || opt_parent_def.is_some_and(|def| {
+                    if !is_clone_like(cx, path.ident.name, def) {
+                        return false;
+                    }
+
+                    // Ensure that the method's return type matches the receiver type
+                    let return_type = cx.typeck_results().expr_ty(item);
+                    let input_type = cx.typeck_results().expr_ty(val);
+                    return_type == input_type.peel_refs()
+                }))
 
             // check for immutability or purity
             && (!is_mutable(cx, val) || is_const_evaluatable(cx, val))
@@ -84,7 +93,8 @@ impl<'tcx> LateLintPass<'tcx> for ClonedRefToSliceRefs<'_> {
             // get appropriate crate for `slice::from_ref`
             && let Some(builtin_crate) = clippy_utils::std_or_core(cx)
         {
-            let mut sugg = Sugg::hir(cx, val, "_");
+            let mut applicability = Applicability::MaybeIncorrect;
+            let mut sugg = Sugg::hir_with_context(cx, val, expr.span.ctxt(), "_", &mut applicability);
             if !cx.typeck_results().expr_ty(val).is_ref() {
                 sugg = sugg.addr();
             }
@@ -94,12 +104,12 @@ impl<'tcx> LateLintPass<'tcx> for ClonedRefToSliceRefs<'_> {
                 CLONED_REF_TO_SLICE_REFS,
                 expr.span,
                 format!(
-                    "this call to `{}` can be replaced with `{builtin_crate}::slice::from_ref`",
+                    "unnecessary use of `{}` to create a slice from a reference",
                     path.ident.name
                 ),
                 "try",
                 format!("{builtin_crate}::slice::from_ref({sugg})"),
-                Applicability::MaybeIncorrect,
+                applicability,
             );
         }
     }
