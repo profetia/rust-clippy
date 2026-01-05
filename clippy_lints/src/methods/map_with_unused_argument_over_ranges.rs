@@ -1,7 +1,7 @@
 use crate::methods::MAP_WITH_UNUSED_ARGUMENT_OVER_RANGES;
 use clippy_utils::diagnostics::span_lint_and_then;
 use clippy_utils::msrvs::{self, Msrv};
-use clippy_utils::source::snippet_with_applicability;
+use clippy_utils::source::snippet_with_context;
 use clippy_utils::sugg::Sugg;
 use clippy_utils::{eager_or_lazy, higher, std_or_core, usage};
 use rustc_ast::LitKind;
@@ -10,12 +10,13 @@ use rustc_data_structures::packed::Pu128;
 use rustc_errors::Applicability;
 use rustc_hir::{Body, Closure, Expr, ExprKind};
 use rustc_lint::LateContext;
-use rustc_span::Span;
+use rustc_span::{Span, SyntaxContext};
 
 fn extract_count_with_applicability(
     cx: &LateContext<'_>,
     range: higher::Range<'_>,
     applicability: &mut Applicability,
+    ctxt: SyntaxContext,
 ) -> Option<String> {
     let start = range.start?;
     let end = range.end?;
@@ -40,7 +41,7 @@ fn extract_count_with_applicability(
             };
             return Some(format!("{count}"));
         }
-        let end_snippet = Sugg::hir_with_applicability(cx, end, "...", applicability)
+        let end_snippet = Sugg::hir_with_context(cx, end, ctxt, "...", applicability)
             .maybe_paren()
             .into_string();
         if lower_bound == 0 {
@@ -74,7 +75,7 @@ pub(super) fn check(
             value: body_expr,
         } = body_hir
         && !usage::BindingUsageFinder::are_params_used(cx, body_hir)
-        && let Some(count) = extract_count_with_applicability(cx, range, &mut applicability)
+        && let Some(count) = extract_count_with_applicability(cx, range, &mut applicability, ex.span.ctxt())
         && let Some(exec_context) = std_or_core(cx)
     {
         let method_to_use_name;
@@ -84,12 +85,12 @@ pub(super) fn check(
         if eager_or_lazy::switch_to_eager_eval(cx, body_expr) {
             if msrv.meets(cx, msrvs::REPEAT_N) {
                 method_to_use_name = "repeat_n";
-                let body_snippet = snippet_with_applicability(cx, body_expr.span, "..", &mut applicability);
+                let body_snippet = snippet_with_context(cx, body_expr.span, ex.span.ctxt(), "..", &mut applicability).0;
                 new_span = (arg.span, format!("{body_snippet}, {count}"));
                 use_take = false;
             } else {
                 method_to_use_name = "repeat";
-                let body_snippet = snippet_with_applicability(cx, body_expr.span, "..", &mut applicability);
+                let body_snippet = snippet_with_context(cx, body_expr.span, ex.span.ctxt(), "..", &mut applicability).0;
                 new_span = (arg.span, body_snippet.to_string());
                 use_take = true;
             }
