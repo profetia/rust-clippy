@@ -252,10 +252,10 @@ fn check_subtraction(
                     };
                     Sugg::hir_from_snippet(cx, big_expr, get_snippet)
                 } else {
-                    Sugg::hir_with_applicability(cx, big_expr, "..", &mut applicability)
+                    Sugg::hir_with_context(cx, big_expr, expr_span.ctxt(), "..", &mut applicability)
                 })
                 .maybe_paren();
-                let little_expr_sugg = Sugg::hir_with_applicability(cx, little_expr, "..", &mut applicability);
+                let little_expr_sugg = Sugg::hir_with_context(cx, little_expr, expr_span.ctxt(), "..", &mut applicability);
 
                 let sugg = format!(
                     "{}{big_expr_sugg}.saturating_sub({little_expr_sugg}){}",
