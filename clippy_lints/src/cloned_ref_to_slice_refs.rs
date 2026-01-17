@@ -87,7 +87,8 @@ impl<'tcx> LateLintPass<'tcx> for ClonedRefToSliceRefs<'_> {
             // get appropriate crate for `slice::from_ref`
             && let Some(builtin_crate) = clippy_utils::std_or_core(cx)
         {
-            let sugg = Sugg::hir(cx, val, "_");
+            let mut applicability = Applicability::MaybeIncorrect;
+            let sugg = Sugg::hir_with_context(cx, val, expr.span.ctxt(), "_", &mut applicability);
 
             span_lint_and_sugg(
                 cx,
@@ -99,7 +100,7 @@ impl<'tcx> LateLintPass<'tcx> for ClonedRefToSliceRefs<'_> {
                 ),
                 "try",
                 format!("{builtin_crate}::slice::from_ref({adjustment}{sugg})"),
-                Applicability::MaybeIncorrect,
+                applicability,
             );
         }
     }
