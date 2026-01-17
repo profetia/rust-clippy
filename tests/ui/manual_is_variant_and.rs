@@ -235,3 +235,10 @@ mod with_func {
         assert_eq!(a1, a2);
     }
 }
+
+fn issue16419() {
+    let then_fn = |s: &str| s.len() > 3;
+    let opt: Option<&str> = Some("test");
+    let _ = opt.is_none() || opt.is_some_and(then_fn);
+    //~^ manual_is_variant_and
+}

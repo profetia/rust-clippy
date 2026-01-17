@@ -1,9 +1,9 @@
 use clippy_utils::diagnostics::{span_lint_and_sugg, span_lint_and_then};
 use clippy_utils::msrvs::{self, Msrv};
 use clippy_utils::res::MaybeDef;
-use clippy_utils::source::snippet_with_applicability;
+use clippy_utils::source::{snippet_with_applicability, snippet_with_context};
 use clippy_utils::sugg::Sugg;
-use clippy_utils::{get_parent_expr, sym};
+use clippy_utils::{SpanlessEq, get_parent_expr, sym};
 use rustc_ast::LitKind;
 use rustc_errors::Applicability;
 use rustc_hir::def::{CtorKind, CtorOf, DefKind, Res};
@@ -13,7 +13,7 @@ use rustc_lint::LateContext;
 use rustc_middle::ty;
 use rustc_span::{Span, Symbol};
 
-use super::MANUAL_IS_VARIANT_AND;
+use super::{MANUAL_IS_VARIANT_AND, method_call};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Flavor {
@@ -226,5 +226,44 @@ pub(super) fn check_map(cx: &LateContext<'_>, expr: &Expr<'_>) {
                 return;
             }
         }
+    }
+}
+
+pub(super) fn check_or<'tcx>(
+    cx: &LateContext<'tcx>,
+    expr: &'tcx Expr<'tcx>,
+    lhs: &'tcx Expr<'tcx>,
+    rhs: &'tcx Expr<'tcx>,
+) {
+    if let Some((lhs_sym, lhs_recv, lhs_args, ..)) = method_call(lhs)
+        && matches!(lhs_sym, sym::is_none)
+        && lhs_args.is_empty()
+        && let Some(flavor) = (cx.typeck_results())
+            .expr_ty(lhs_recv)
+            .opt_def_id()
+            .and_then(|did| Flavor::new(cx, did))
+        && matches!(flavor, Flavor::Option)
+        && let Some((rhs_sym, rhs_recv, rhs_args, ..)) = method_call(rhs)
+        && matches!(rhs_sym, sym::is_some_and)
+        && let [map_arg] = rhs_args
+        && cx
+            .typeck_results()
+            .expr_ty(rhs_recv)
+            .is_diag_item(cx, flavor.diag_sym())
+        && SpanlessEq::new(cx).eq_expr(lhs_recv, rhs_recv)
+        && let Ok(map_func) = MapFunc::try_from(map_arg)
+    {
+        let mut app = Applicability::MachineApplicable;
+        let (recv_snip, _) = snippet_with_context(cx, lhs_recv.span, expr.span.ctxt(), "_", &mut app);
+        let map_func_snip = map_func.sugg(cx, false, &mut app);
+        span_lint_and_sugg(
+            cx,
+            MANUAL_IS_VARIANT_AND,
+            expr.span,
+            "called `is_none() || is_some_and(<f>)` on an `Option` value",
+            "use",
+            format!("{recv_snip}.is_none_or({map_func_snip})"),
+            app,
+        );
     }
 }
