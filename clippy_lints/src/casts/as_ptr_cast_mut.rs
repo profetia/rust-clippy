@@ -1,5 +1,5 @@
 use clippy_utils::diagnostics::span_lint_and_sugg;
-use clippy_utils::source::SpanRangeExt;
+use clippy_utils::source::snippet_with_context;
 use rustc_errors::Applicability;
 use rustc_hir::{Expr, ExprKind};
 use rustc_lint::LateContext;
@@ -19,11 +19,10 @@ pub(super) fn check(cx: &LateContext<'_>, expr: &Expr<'_>, cast_expr: &Expr<'_>,
         && let as_ptr_sig = cx.tcx.fn_sig(as_ptr_did).instantiate_identity()
         && let Some(first_param_ty) = as_ptr_sig.skip_binder().inputs().iter().next()
         && let ty::Ref(_, _, Mutability::Not) = first_param_ty.kind()
-        && let Some(recv) = receiver.span.get_source_text(cx)
     {
         // `as_mut_ptr` might not exist
-        let applicability = Applicability::MaybeIncorrect;
-
+        let mut applicability = Applicability::MaybeIncorrect;
+        let (recv, _) = snippet_with_context(cx, receiver.span, expr.span.ctxt(), "..", &mut applicability);
         span_lint_and_sugg(
             cx,
             AS_PTR_CAST_MUT,

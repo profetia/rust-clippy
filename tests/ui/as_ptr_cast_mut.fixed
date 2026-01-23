@@ -36,3 +36,15 @@ fn main() {
     let ref_with_write_perm = Covariant(std::ptr::addr_of_mut!(local) as *const _);
     let _ = ref_with_write_perm.as_ptr() as *mut u8;
 }
+
+fn wrongly_unmangled_macros() {
+    macro_rules! deref {
+        ($x:expr) => {
+            *$x
+        };
+    }
+
+    let mut string = &mut String::new();
+    let _ = deref!(string).as_mut_ptr();
+    //~^ as_ptr_cast_mut
+}
