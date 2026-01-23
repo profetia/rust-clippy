@@ -690,3 +690,20 @@ fn issue16351() {
     take(format!("ouch{dot}").to_string());
     //~^ unnecessary_to_owned
 }
+
+fn wrongly_unmangled_macros() {
+    use std::collections::HashSet;
+
+    macro_rules! deref {
+        ($x:expr) => {
+            *$x
+        };
+    }
+    let slice = &&["x"][..];
+    let _ = deref!(slice).to_vec().into_iter();
+    //~^ unnecessary_to_owned
+
+    let mut s = HashSet::from([vec!["a"]]);
+    s.remove(&deref!(slice).to_vec());
+    //~^ unnecessary_to_owned
+}

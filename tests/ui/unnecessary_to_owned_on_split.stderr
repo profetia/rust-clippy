@@ -55,5 +55,11 @@ error: unnecessary use of `to_owned`
 LL |     let _ = [1].to_owned().split(|x| *x == 2).next().unwrap();
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use: `[1].split(|x| *x == 2)`
 
-error: aborting due to 9 previous errors
+error: unnecessary use of `to_owned`
+  --> tests/ui/unnecessary_to_owned_on_split.rs:53:13
+   |
+LL |     let _ = deref!(&"a").to_owned().split(deref!(&'a')).next().unwrap();
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use: `deref!(&"a").split(deref!(&'a'))`
+
+error: aborting due to 10 previous errors
 

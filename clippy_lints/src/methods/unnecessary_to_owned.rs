@@ -3,7 +3,7 @@ use super::unnecessary_iter_cloned::{self, is_into_iter};
 use clippy_utils::diagnostics::{span_lint_and_sugg, span_lint_and_then};
 use clippy_utils::msrvs::{self, Msrv};
 use clippy_utils::res::MaybeDef;
-use clippy_utils::source::{SpanRangeExt, snippet, snippet_with_context};
+use clippy_utils::source::{snippet, snippet_with_context};
 use clippy_utils::ty::{get_iterator_item_ty, implements_trait, is_copy, peel_and_count_ty_refs};
 use clippy_utils::visitors::find_all_ret_expressions;
 use clippy_utils::{fn_def_id, get_parent_expr, is_expr_temporary_value, return_ty, sym};
@@ -217,7 +217,6 @@ fn check_into_iter_call_arg(
         && let parent_ty = cx.typeck_results().expr_ty(parent)
         && implements_trait(cx, parent_ty, iterator_trait_id, &[])
         && let Some(item_ty) = get_iterator_item_ty(cx, parent_ty)
-        && let Some(receiver_snippet) = receiver.span.get_source_text(cx)
         // If the receiver is a `Cow`, we can't remove the `into_owned` generally, see https://github.com/rust-lang/rust-clippy/issues/13624.
         && !cx.typeck_results().expr_ty(receiver).is_diag_item(cx, sym::Cow)
         // Calling `iter()` on a temporary object can lead to false positives. #14242
@@ -232,6 +231,10 @@ fn check_into_iter_call_arg(
         } else {
             "cloned"
         };
+
+        let mut applicability = Applicability::MaybeIncorrect;
+        let (receiver_snippet, _) = snippet_with_context(cx, receiver.span, expr.span.ctxt(), "..", &mut applicability);
+
         // The next suggestion may be incorrect because the removal of the `to_owned`-like
         // function could cause the iterator to hold a reference to a resource that is used
         // mutably. See https://github.com/rust-lang/rust-clippy/issues/8148.
@@ -242,7 +245,7 @@ fn check_into_iter_call_arg(
             format!("unnecessary use of `{method_name}`"),
             "use",
             format!("{receiver_snippet}.iter().{cloned_or_copied}()"),
-            Applicability::MaybeIncorrect,
+            applicability,
         );
         return true;
     }
@@ -313,8 +316,6 @@ fn check_string_from_utf8<'tcx>(cx: &LateContext<'tcx>, expr: &'tcx Expr<'tcx>, 
 fn check_split_call_arg(cx: &LateContext<'_>, expr: &Expr<'_>, method_name: Symbol, receiver: &Expr<'_>) -> bool {
     if let Some(parent) = get_parent_expr(cx, expr)
         && let Some((sym::split, argument_expr)) = get_fn_name_and_arg(cx, parent)
-        && let Some(receiver_snippet) = receiver.span.get_source_text(cx)
-        && let Some(arg_snippet) = argument_expr.span.get_source_text(cx)
     {
         // We may end-up here because of an expression like `x.to_string().split(…)` where the type of `x`
         // implements `AsRef<str>` but does not implement `Deref<Target = str>`. In this case, we have to
@@ -328,6 +329,10 @@ fn check_split_call_arg(cx: &LateContext<'_>, expr: &Expr<'_>, method_name: Symb
         } else {
             ""
         };
+
+        let mut applicability = Applicability::MaybeIncorrect;
+        let (receiver_snippet, _) = snippet_with_context(cx, receiver.span, expr.span.ctxt(), "..", &mut applicability);
+        let (arg_snippet, _) = snippet_with_context(cx, argument_expr.span, expr.span.ctxt(), "..", &mut applicability);
 
         // The next suggestion may be incorrect because the removal of the `to_owned`-like
         // function could cause the iterator to hold a reference to a resource that is used
@@ -714,8 +719,10 @@ fn check_if_applicable_to_argument<'tcx>(cx: &LateContext<'tcx>, arg: &Expr<'tcx
         && let arg_ty = arg_ty.peel_refs()
         // For now we limit this lint to `String` and `Vec`.
         && (is_str_and_string(cx, arg_ty, original_arg_ty) || is_slice_and_vec(cx, arg_ty, original_arg_ty))
-        && let Some(snippet) = caller.span.get_source_text(cx)
     {
+        let mut applicability = Applicability::MaybeIncorrect;
+        let (snippet, _) = snippet_with_context(cx, caller.span, arg.span.ctxt(), "..", &mut applicability);
+
         span_lint_and_sugg(
             cx,
             UNNECESSARY_TO_OWNED,
@@ -725,9 +732,9 @@ fn check_if_applicable_to_argument<'tcx>(cx: &LateContext<'tcx>, arg: &Expr<'tcx
             if original_arg_ty.is_array() {
                 format!("{snippet}.as_slice()")
             } else {
-                snippet.to_owned()
+                snippet.to_string()
             },
-            Applicability::MaybeIncorrect,
+            applicability,
         );
     }
 }

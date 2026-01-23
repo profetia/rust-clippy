@@ -43,3 +43,13 @@ fn main() {
     let _ = [1].to_owned().split(|x| *x == 2).next().unwrap();
     //~^ unnecessary_to_owned
 }
+
+fn wrongly_unmangled_macros() {
+    macro_rules! deref {
+        ($x:expr) => {
+            *$x
+        };
+    }
+    let _ = deref!(&"a").to_owned().split(deref!(&'a')).next().unwrap();
+    //~^ unnecessary_to_owned
+}
