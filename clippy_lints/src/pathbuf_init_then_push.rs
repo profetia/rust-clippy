@@ -1,6 +1,6 @@
 use clippy_utils::diagnostics::span_lint_and_sugg;
 use clippy_utils::res::{MaybeDef, MaybeResPath};
-use clippy_utils::source::{SpanRangeExt, snippet};
+use clippy_utils::source::{snippet, snippet_with_context};
 use clippy_utils::sym;
 use rustc_ast::{LitKind, StrStyle};
 use rustc_errors::Applicability;
@@ -62,7 +62,7 @@ struct PathbufPushSearcher<'tcx> {
 impl PathbufPushSearcher<'_> {
     /// Try to generate a suggestion with `PathBuf::from`.
     /// Returns `None` if the suggestion would be invalid.
-    fn gen_pathbuf_from(&self, cx: &LateContext<'_>) -> Option<String> {
+    fn gen_pathbuf_from(&self, cx: &LateContext<'_>, app: &mut Applicability) -> Option<String> {
         if let ExprKind::Call(iter_expr, []) = &self.init_val.kind
             && let ExprKind::Path(QPath::TypeRelative(ty, segment)) = &iter_expr.kind
             && let TyKind::Path(ty_path) = &ty.kind
@@ -73,18 +73,18 @@ impl PathbufPushSearcher<'_> {
             && let Some(arg) = self.arg
             && let ExprKind::Lit(x) = arg.kind
             && let LitKind::Str(_, StrStyle::Cooked) = x.node
-            && let Some(s) = arg.span.get_source_text(cx)
         {
+            let (s, _) = snippet_with_context(cx, arg.span, self.err_span.ctxt(), "..", app);
             Some(format!(" = PathBuf::from({s});"))
         } else {
             None
         }
     }
 
-    fn gen_pathbuf_join(&self, cx: &LateContext<'_>) -> Option<String> {
+    fn gen_pathbuf_join(&self, cx: &LateContext<'_>, app: &mut Applicability) -> Option<String> {
         let arg = self.arg?;
-        let arg_str = arg.span.get_source_text(cx)?;
-        let init_val = self.init_val.span.get_source_text(cx)?;
+        let (arg_str, _) = snippet_with_context(cx, arg.span, self.err_span.ctxt(), "..", app);
+        let (init_val, _) = snippet_with_context(cx, self.init_val.span, self.err_span.ctxt(), "..", app);
         Some(format!(" = {init_val}.join({arg_str});"))
     }
 
@@ -102,12 +102,14 @@ impl PathbufPushSearcher<'_> {
             sugg.push_str(": ");
             sugg.push_str(&snippet(cx, span, "_"));
         }
-        match self.gen_pathbuf_from(cx) {
+
+        let mut app = Applicability::HasPlaceholders;
+        match self.gen_pathbuf_from(cx, &mut app) {
             Some(value) => {
                 sugg.push_str(&value);
             },
             None => {
-                if let Some(value) = self.gen_pathbuf_join(cx) {
+                if let Some(value) = self.gen_pathbuf_join(cx, &mut app) {
                     sugg.push_str(&value);
                 } else {
                     return;
@@ -122,7 +124,7 @@ impl PathbufPushSearcher<'_> {
             "calls to `push` immediately after creation",
             "consider using the `.join()`",
             sugg,
-            Applicability::HasPlaceholders,
+            app,
         );
     }
 }

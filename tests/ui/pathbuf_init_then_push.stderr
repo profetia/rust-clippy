@@ -33,5 +33,13 @@ LL | |
 LL | |     path_buf.push("buz");
    | |_________________________^ help: consider using the `.join()`: `let mut path_buf = PathBuf::from("foo").join("bar").join("buz");`
 
-error: aborting due to 4 previous errors
+error: calls to `push` immediately after creation
+  --> tests/ui/pathbuf_init_then_push.rs:45:5
+   |
+LL | /     let mut path_buf = dot_join!(PathBuf::from(deref!(&"a")), deref!(&"b"));
+LL | |
+LL | |     path_buf.push(deref!(&"some/path"));
+   | |________________________________________^ help: consider using the `.join()`: `let mut path_buf = dot_join!(PathBuf::from(deref!(&"a")), deref!(&"b")).join(deref!(&"some/path"));`
+
+error: aborting due to 5 previous errors
 

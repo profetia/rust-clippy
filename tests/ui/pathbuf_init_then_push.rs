@@ -28,3 +28,21 @@ fn main() {
     #[cfg(cats)]
     path_buf.push("foo");
 }
+
+fn wrongly_unmangled_macros() {
+    macro_rules! deref {
+        ($x:expr) => {
+            *$x
+        };
+    }
+
+    macro_rules! dot_join {
+        ($x:expr, $y:expr) => {
+            $x.join($y)
+        };
+    }
+
+    let mut path_buf = dot_join!(PathBuf::from(deref!(&"a")), deref!(&"b"));
+    //~^ pathbuf_init_then_push
+    path_buf.push(deref!(&"some/path"));
+}
