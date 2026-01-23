@@ -204,3 +204,16 @@ mod issue_12821 {
         }
     }
 }
+
+fn wrongly_unmangled_macros() {
+    macro_rules! dot_iter {
+        ($x:expr) => {
+            $x.iter()
+        };
+    }
+
+    let v: Vec<_> = "hello".chars().collect();
+    for c in dot_iter!(v).cloned() {
+        //~^ unnecessary_to_owned
+    }
+}

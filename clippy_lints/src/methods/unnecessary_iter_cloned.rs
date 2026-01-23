@@ -2,7 +2,7 @@ use super::utils::clone_or_copy_needed;
 use clippy_utils::diagnostics::span_lint_and_then;
 use clippy_utils::higher::ForLoop;
 use clippy_utils::res::MaybeResPath;
-use clippy_utils::source::SpanRangeExt;
+use clippy_utils::source::snippet_with_context;
 use clippy_utils::ty::{get_iterator_item_ty, implements_trait};
 use clippy_utils::visitors::for_each_expr_without_closures;
 use clippy_utils::{can_mut_borrow_both, fn_def_id, get_parent_expr};
@@ -39,10 +39,9 @@ pub fn check_for_loop_iter(
     cloned_before_iter: bool,
 ) -> bool {
     if let Some(grandparent) = get_parent_expr(cx, expr).and_then(|parent| get_parent_expr(cx, parent))
-        && let Some(ForLoop { pat, body, .. }) = ForLoop::hir(grandparent)
+        && let Some(ForLoop { pat, body, span, .. }) = ForLoop::hir(grandparent)
         && let (clone_or_copy_needed, references_to_binding) = clone_or_copy_needed(cx, pat, body)
         && !clone_or_copy_needed
-        && let Some(receiver_snippet) = receiver.span.get_source_text(cx)
     {
         // Issue 12098
         // https://github.com/rust-lang/rust-clippy/issues/12098
@@ -90,6 +89,19 @@ pub fn check_for_loop_iter(
             }
         }
 
+        // If `check_into_iter_call_arg` called `check_for_loop_iter` because a call to
+        // a `to_owned`-like function was removed, then the next suggestion may be
+        // incorrect. This is because the iterator that results from the call's removal
+        // could hold a reference to a resource that is used mutably. See
+        // https://github.com/rust-lang/rust-clippy/issues/8148.
+        let mut applicability = if cloned_before_iter {
+            Applicability::MaybeIncorrect
+        } else {
+            Applicability::MachineApplicable
+        };
+
+        let (receiver_snippet, _) = snippet_with_context(cx, receiver.span, span.ctxt(), "..", &mut applicability);
+
         // the lint should not be executed if no violation happens
         let snippet = if let ExprKind::MethodCall(maybe_iter_method_name, collection, [], _) = receiver.kind
             && maybe_iter_method_name.ident.name == sym::iter
@@ -102,8 +114,9 @@ pub fn check_for_loop_iter(
             && implements_trait(cx, collection_ty, into_iterator_trait_id, &[])
             && let Some(into_iter_item_ty) = cx.get_associated_type(collection_ty, into_iterator_trait_id, sym::Item)
             && iter_item_ty == into_iter_item_ty
-            && let Some(collection_snippet) = collection.span.get_source_text(cx)
         {
+            let (collection_snippet, _) =
+                snippet_with_context(cx, collection.span, span.ctxt(), "..", &mut applicability);
             collection_snippet
         } else {
             receiver_snippet
@@ -114,20 +127,9 @@ pub fn check_for_loop_iter(
             expr.span,
             format!("unnecessary use of `{method_name}`"),
             |diag| {
-                // If `check_into_iter_call_arg` called `check_for_loop_iter` because a call to
-                // a `to_owned`-like function was removed, then the next suggestion may be
-                // incorrect. This is because the iterator that results from the call's removal
-                // could hold a reference to a resource that is used mutably. See
-                // https://github.com/rust-lang/rust-clippy/issues/8148.
-                let applicability = if cloned_before_iter {
-                    Applicability::MaybeIncorrect
-                } else {
-                    Applicability::MachineApplicable
-                };
-
                 let combined = references_to_binding
                     .into_iter()
-                    .chain(vec![(expr.span, snippet.to_owned())])
+                    .chain(vec![(expr.span, snippet.to_string())])
                     .collect_vec();
 
                 diag.multipart_suggestion("remove any references to the binding", combined, applicability);
