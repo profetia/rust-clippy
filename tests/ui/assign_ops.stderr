@@ -97,5 +97,11 @@ error: manual implementation of an assign operation
 LL |         s = s + S;
    |         ^^^^^^^^^ help: replace it with: `s += S`
 
-error: aborting due to 16 previous errors
+error: manual implementation of an assign operation
+  --> tests/ui/assign_ops.rs:149:5
+   |
+LL |     a = a + plus_one!(2);
+   |     ^^^^^^^^^^^^^^^^^^^^ help: replace it with: `a += plus_one!(2)`
+
+error: aborting due to 17 previous errors
 

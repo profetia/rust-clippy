@@ -137,3 +137,15 @@ mod issue14871 {
         //~^ assign_op_pattern
     }
 }
+
+fn wrongly_unmangled_macros() {
+    macro_rules! plus_one {
+        ($x:expr) => {
+            $x + 1
+        };
+    }
+
+    let mut a = 5;
+    a = a + plus_one!(2);
+    //~^ assign_op_pattern
+}
