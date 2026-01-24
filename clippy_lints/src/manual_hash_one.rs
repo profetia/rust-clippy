@@ -2,7 +2,7 @@ use clippy_config::Conf;
 use clippy_utils::diagnostics::span_lint_hir_and_then;
 use clippy_utils::msrvs::{self, Msrv};
 use clippy_utils::res::{MaybeDef, MaybeResPath, MaybeTypeckRes};
-use clippy_utils::source::SpanRangeExt;
+use clippy_utils::source::snippet_with_context;
 use clippy_utils::sym;
 use clippy_utils::visitors::{is_local_used, local_used_once};
 use rustc_errors::Applicability;
@@ -105,24 +105,26 @@ impl LateLintPass<'_> for ManualHashOne {
                 finish_expr.span,
                 "manual implementation of `BuildHasher::hash_one`",
                 |diag| {
-                    if let Some(build_hasher) = build_hasher.span.get_source_text(cx)
-                        && let Some(hashed_value) = hashed_value.span.get_source_text(cx)
-                    {
-                        diag.multipart_suggestion(
-                            "try",
-                            vec![
-                                (local_stmt.span, String::new()),
-                                (hash_stmt.span, String::new()),
-                                (
-                                    finish_expr.span,
-                                    // `needless_borrows_for_generic_args` will take care of
-                                    // removing the `&` when it isn't needed
-                                    format!("{build_hasher}.hash_one(&{hashed_value})"),
-                                ),
-                            ],
-                            Applicability::MachineApplicable,
-                        );
-                    }
+                    let mut applicability = Applicability::MachineApplicable;
+                    let (build_hasher, _) =
+                        snippet_with_context(cx, build_hasher.span, local.span.ctxt(), "..", &mut applicability);
+                    let (hashed_value, _) =
+                        snippet_with_context(cx, hashed_value.span, local.span.ctxt(), "..", &mut applicability);
+
+                    diag.multipart_suggestion(
+                        "try",
+                        vec![
+                            (local_stmt.span, String::new()),
+                            (hash_stmt.span, String::new()),
+                            (
+                                finish_expr.span,
+                                // `needless_borrows_for_generic_args` will take care of
+                                // removing the `&` when it isn't needed
+                                format!("{build_hasher}.hash_one(&{hashed_value})"),
+                            ),
+                        ],
+                        applicability,
+                    );
                 },
             );
         }

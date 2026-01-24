@@ -91,3 +91,18 @@ fn msrv_1_71(b: impl BuildHasher, v: impl Hash) {
     let _ = b.hash_one(&v);
     //~^ manual_hash_one
 }
+
+fn wrongly_unmangled_macros(b: &impl BuildHasher, v: &impl Hash) {
+    use std::path::PathBuf;
+
+    macro_rules! deref {
+        ($x:expr) => {
+            *$x
+        };
+    }
+
+    
+    
+    let _ = deref!(b).hash_one(&deref!(v));
+    //~^ manual_hash_one
+}
