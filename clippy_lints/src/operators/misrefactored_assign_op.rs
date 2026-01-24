@@ -1,5 +1,4 @@
 use clippy_utils::diagnostics::span_lint_and_then;
-use clippy_utils::source::SpanRangeExt;
 use clippy_utils::{eq_expr_value, sugg};
 use rustc_errors::Applicability;
 use rustc_hir as hir;
@@ -42,28 +41,22 @@ fn lint_misrefactored_assign_op(
         expr.span,
         "variable appears on both sides of an assignment operation",
         |diag| {
-            if let Some(snip_a) = assignee.span.get_source_text(cx)
-                && let Some(snip_r) = rhs_other.span.get_source_text(cx)
-            {
-                let a = &sugg::Sugg::hir(cx, assignee, "..");
-                let r = &sugg::Sugg::hir(cx, rhs, "..");
-                let long = format!("{snip_a} = {}", sugg::make_binop(op, a, r));
-                diag.span_suggestion(
-                    expr.span,
-                    format!(
-                        "did you mean `{snip_a} = {snip_a} {} {snip_r}` or `{long}`? Consider replacing it with",
-                        op.as_str()
-                    ),
-                    format!("{snip_a} {}= {snip_r}", op.as_str()),
-                    Applicability::MaybeIncorrect,
-                );
-                diag.span_suggestion(
-                    expr.span,
-                    "or",
-                    long,
-                    Applicability::MaybeIncorrect, // snippet
-                );
-            }
+            let mut applicability = Applicability::MaybeIncorrect;
+            let a = sugg::Sugg::hir_with_context(cx, assignee, expr.span.ctxt(), "..", &mut applicability);
+            let r = sugg::Sugg::hir_with_context(cx, rhs, expr.span.ctxt(), "..", &mut applicability);
+            let r_other = sugg::Sugg::hir_with_context(cx, rhs_other, expr.span.ctxt(), "..", &mut applicability);
+
+            let long = format!("{a} = {}", sugg::make_binop(op, &a, &r));
+            diag.span_suggestion(
+                expr.span,
+                format!(
+                    "did you mean `{a} = {a} {} {r_other}` or `{long}`? Consider replacing it with",
+                    op.as_str()
+                ),
+                format!("{a} {}= {r_other}", op.as_str()),
+                applicability,
+            );
+            diag.span_suggestion(expr.span, "or", long, applicability);
         },
     );
 }

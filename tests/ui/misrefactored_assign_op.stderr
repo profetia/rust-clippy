@@ -153,5 +153,22 @@ LL -     a *= a * a;
 LL +     a = a * a * a;
    |
 
-error: aborting due to 9 previous errors
+error: variable appears on both sides of an assignment operation
+  --> tests/ui/misrefactored_assign_op.rs:50:5
+   |
+LL |     a *= a * plus_one!(2);
+   |     ^^^^^^^^^^^^^^^^^^^^^
+   |
+help: did you mean `a = a * plus_one!(2)` or `a = a * a * plus_one!(2)`? Consider replacing it with
+   |
+LL -     a *= a * plus_one!(2);
+LL +     a *= plus_one!(2);
+   |
+help: or
+   |
+LL -     a *= a * plus_one!(2);
+LL +     a = a * a * plus_one!(2);
+   |
+
+error: aborting due to 10 previous errors
 
