@@ -1202,6 +1202,10 @@ impl<'tcx> LateLintPass<'tcx> for Matches {
             }
             if !from_expansion {
                 redundant_pattern_match::check(cx, expr);
+
+                if let ExprKind::MethodCall(path, recv, args, call_span) = expr.kind {
+                    manual_filter::check_method_call(cx, path, recv, args, call_span, expr);
+                }
             }
         }
     }
