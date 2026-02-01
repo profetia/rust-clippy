@@ -75,3 +75,8 @@ fn deny_allow_attributes() -> Option<u8> {
 #[repr(transparent)]
 #[derive(proc_macro_derive::AllowLintSameSpan)] // This macro generates tokens with the same span as the whole struct and repr
 struct IgnoreDerived;
+
+#[rustfmt::skip]
+#[ expect (dead_code) ]
+//~^ allow_attributes
+struct Issue16491;

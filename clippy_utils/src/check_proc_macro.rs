@@ -32,6 +32,8 @@ use rustc_session::Session;
 use rustc_span::symbol::{Ident, kw};
 use rustc_span::{Span, Symbol, sym};
 
+use crate::rustc_ast::attr::AttributeExt;
+
 /// The search pattern to look for. Used by `span_matches_pat`
 #[derive(Clone)]
 pub enum Pat {
@@ -350,18 +352,8 @@ fn attr_search_pat(attr: &Attribute) -> (Pat, Pat) {
         AttrKind::Normal(..) => {
             if let Some(name) = attr.name() {
                 // NOTE: This will likely have false positives, like `allow = 1`
-                let ident_string = name.to_string();
-                if attr.style == AttrStyle::Outer {
-                    (
-                        Pat::OwnedMultiStr(vec!["#[".to_owned() + &ident_string, ident_string]),
-                        Pat::Str(""),
-                    )
-                } else {
-                    (
-                        Pat::OwnedMultiStr(vec!["#![".to_owned() + &ident_string, ident_string]),
-                        Pat::Str(""),
-                    )
-                }
+
+                (Pat::Sym(name), Pat::Str(""))
             } else {
                 (Pat::Str("#"), Pat::Str("]"))
             }
@@ -575,7 +567,6 @@ impl_with_search_pat!((_cx: LateContext<'tcx>, self: Ident) => ident_search_pat(
 impl_with_search_pat!((_cx: LateContext<'tcx>, self: Lit) => lit_search_pat(&self.node));
 impl_with_search_pat!((_cx: LateContext<'tcx>, self: Path<'_>) => path_search_pat(self));
 
-impl_with_search_pat!((_cx: EarlyContext<'tcx>, self: Attribute) => attr_search_pat(self));
 impl_with_search_pat!((_cx: EarlyContext<'tcx>, self: ast::Ty) => ast_ty_search_pat(self));
 
 impl<'cx> WithSearchPat<'cx> for (&FnKind<'cx>, &Body<'cx>, HirId, Span) {
@@ -587,6 +578,24 @@ impl<'cx> WithSearchPat<'cx> for (&FnKind<'cx>, &Body<'cx>, HirId, Span) {
 
     fn span(&self) -> Span {
         self.3
+    }
+}
+
+impl<'cx> WithSearchPat<'cx> for Attribute {
+    type Context = EarlyContext<'cx>;
+
+    fn search_pat(&self, _cx: &Self::Context) -> (Pat, Pat) {
+        attr_search_pat(self)
+    }
+
+    fn span(&self) -> Span {
+        if matches!(self.kind, AttrKind::Normal(_))
+            && let Some(path_span) = self.path_span()
+        {
+            return self.span.with_lo(path_span.lo());
+        }
+
+        return self.span;
     }
 }
 
