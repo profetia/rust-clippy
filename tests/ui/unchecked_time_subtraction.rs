@@ -26,7 +26,6 @@ fn main() {
     //~^ unchecked_time_subtraction
 
     let _ = Duration::from_secs(10) - Duration::from_secs(5);
-    //~^ unchecked_time_subtraction
 
     let _ = second - dur1;
     //~^ unchecked_time_subtraction
@@ -55,8 +54,13 @@ fn issue16234() {
         };
     }
 
-    duration!(0).sub(duration!(1));
+    let d = duration!(0);
+    d.sub(duration!(1));
     //~^ unchecked_time_subtraction
-    let _ = duration!(0) - duration!(1);
+    let _ = d - duration!(1);
     //~^ unchecked_time_subtraction
+}
+
+fn issue16499() {
+    let _ = Duration::from_millis(2) - Duration::from_millis(1);
 }

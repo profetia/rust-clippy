@@ -1,14 +1,17 @@
+use std::time::Duration;
+
 use clippy_config::Conf;
-use clippy_utils::diagnostics::{span_lint_and_sugg, span_lint_and_then};
+use clippy_utils::consts::{ConstEvalCtxt, FullInt};
+use clippy_utils::diagnostics::{span_lint_and_note, span_lint_and_sugg, span_lint_and_then};
 use clippy_utils::msrvs::{self, Msrv};
 use clippy_utils::res::{MaybeDef, MaybeTypeckRes};
 use clippy_utils::sugg::Sugg;
 use rustc_errors::Applicability;
-use rustc_hir::{BinOpKind, Expr, ExprKind};
+use rustc_hir::{BinOpKind, Expr, ExprKind, QPath};
 use rustc_lint::{LateContext, LateLintPass};
 use rustc_middle::ty::Ty;
 use rustc_session::impl_lint_pass;
-use rustc_span::sym;
+use rustc_span::{SyntaxContext, sym};
 
 declare_clippy_lint! {
     /// ### What it does
@@ -113,6 +116,27 @@ impl LateLintPass<'_> for UncheckedTimeSubtraction {
             && !expr.span.from_expansion()
             && self.msrv.meets(cx, msrvs::TRY_FROM)
         {
+            let const_eval = ConstEvalCtxt::new(cx);
+            let ctxt = expr.span.ctxt();
+            if let Some(lhs) = const_eval_duration(&const_eval, lhs, ctxt)
+                && let Some(rhs) = const_eval_duration(&const_eval, rhs, ctxt)
+            {
+                if lhs >= rhs {
+                    // If the duration subtraction can be proven to not underflow, then we don't lint
+                    return;
+                }
+
+                span_lint_and_note(
+                    cx,
+                    UNCHECKED_TIME_SUBTRACTION,
+                    expr.span,
+                    "unchecked subtraction of two `Duration`s that will underflow",
+                    None,
+                    "if this is intentional, consider allowing the lint",
+                );
+                return;
+            }
+
             print_unchecked_duration_subtraction_sugg(cx, lhs, rhs, expr);
         }
     }
@@ -190,4 +214,41 @@ fn print_unchecked_duration_subtraction_sugg(
             }
         },
     );
+}
+
+fn const_eval_duration(const_eval: &ConstEvalCtxt<'_>, expr: &Expr<'_>, ctxt: SyntaxContext) -> Option<Duration> {
+    if let ExprKind::Call(func, args) = expr.kind
+        && let ExprKind::Path(QPath::TypeRelative(_, func_name)) = func.kind
+    {
+        macro_rules! try_parse_duration {
+            (($( $name:ident : $ty:ty ),+ $(,)?) -> $ctor:ident ( $($args:tt)* )) => {{
+                $(
+                    let Some(FullInt::U(v)) = const_eval.eval_full_int($name, ctxt) else { return None };
+                    let $name = <$ty>::try_from(v).ok()?;
+                )+
+                Some(Duration::$ctor($($args)*))
+            }};
+        }
+
+        return match (func_name.ident.name, args) {
+            (sym::new, [secs, nanos]) => try_parse_duration! { (secs: u64, nanos: u32) -> new(secs, nanos) },
+            (clippy_utils::sym::from_secs, [secs]) => try_parse_duration! { (secs: u64) -> from_secs(secs) },
+            (clippy_utils::sym::from_millis, [millis]) => try_parse_duration! { (millis: u64) -> from_millis(millis) },
+            (clippy_utils::sym::from_micros, [micros]) => try_parse_duration! { (micros: u64) -> from_micros(micros) },
+            (clippy_utils::sym::from_nanos, [nanos]) => try_parse_duration! { (nanos: u64) -> from_nanos(nanos) },
+            (clippy_utils::sym::from_weeks, [weeks]) => {
+                try_parse_duration! { (weeks: u64) -> from_secs(weeks * 7 * 24 * 60 * 60) }
+            },
+            (clippy_utils::sym::from_days, [days]) => {
+                try_parse_duration! { (days: u64) -> from_secs(days * 24 * 60 * 60) }
+            },
+            (clippy_utils::sym::from_hours, [hours]) => {
+                try_parse_duration! { (hours: u64) -> from_secs(hours * 60 * 60) }
+            },
+            (clippy_utils::sym::from_mins, [mins]) => try_parse_duration! { (mins: u64) -> from_secs(mins * 60) },
+            _ => None,
+        };
+    }
+
+    None
 }
