@@ -427,6 +427,13 @@ impl<T: Clone> Clone for DerefWrapperWithClone<T> {
     }
 }
 
+fn issue16517(a: &str) -> String {
+    let mut b = String::new();
+    a.clone_into(&mut b);
+    //~^ assigning_clones
+    b
+}
+
 #[cfg(test)]
 mod test {
     #[derive(Default)]

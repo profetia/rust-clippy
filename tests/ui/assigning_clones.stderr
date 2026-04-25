@@ -181,5 +181,11 @@ error: assigning the result of `ToOwned::to_owned()` may be inefficient
 LL |     s = ToOwned::to_owned(&format!("{} {}", "hello", "world"));
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use `clone_into()`: `ToOwned::clone_into(&format!("{} {}", "hello", "world"), &mut s)`
 
-error: aborting due to 30 previous errors
+error: assigning the result of `std::string::ToString::to_string()` may be inefficient
+  --> tests/ui/assigning_clones.rs:432:5
+   |
+LL |     b = a.to_string();
+   |     ^^^^^^^^^^^^^^^^^ help: use `clone_into()`: `a.clone_into(&mut b)`
+
+error: aborting due to 31 previous errors
 
