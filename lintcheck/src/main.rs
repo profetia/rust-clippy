@@ -127,10 +127,10 @@ impl Crate {
             cmd.args(&[
                 "record",
                 "-e",
-                "instructions", // Only count instructions
-                "-g",           // Enable call-graph, useful for flamegraphs and produces richer reports
-                "--quiet",      // Do not tamper with lintcheck's normal output
-                "--compression-level=22",
+                "cpu-clock",
+                "--call-graph",
+                "dwarf",
+                "--quiet",     // Do not tamper with lintcheck's normal output
                 "--freq=3000", // Slow down program to capture all events
                 "-o",
                 &perf_data_filename,
