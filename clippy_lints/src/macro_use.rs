@@ -62,12 +62,33 @@ pub struct MacroUseImports {
     /// the actual import path used and the span of the attribute above it. The value is
     /// the location, where the lint should be emitted.
     imports: Vec<(String, Span, hir::HirId)>,
+    /// Items which introduced the imports above. These are skipped while collecting macro references.
+    import_items: FxHashSet<hir::HirId>,
     /// the span of the macro reference, kept to ensure only one reference is used per macro call.
     collected: FxHashSet<Span>,
     mac_refs: Vec<MacroRefData>,
 }
 
 impl MacroUseImports {
+    fn collect_import(&mut self, cx: &LateContext<'_>, item: &hir::Item<'_>) {
+        if cx.sess().opts.edition >= Edition::Edition2018
+            && let hir::ItemKind::Use(UseTree { prefix, .. }) = &item.kind
+            && let hir_id = item.hir_id()
+            && let attrs = cx.tcx.hir_attrs(hir_id)
+            && let Some(mac_attr_span) = find_attr!(attrs, MacroUse {span, ..} => *span)
+            && let Some(Res::Def(DefKind::Mod, id)) = prefix.res.type_ns
+            && !id.is_local()
+        {
+            self.import_items.insert(hir_id);
+            for kid in cx.tcx.module_children(id) {
+                if let Res::Def(DefKind::Macro(_mac_type), mac_id) = kid.res {
+                    let def_path = cx.tcx.def_path_str(mac_id);
+                    self.imports.push((def_path, mac_attr_span, hir_id));
+                }
+            }
+        }
+    }
+
     fn push_unique_macro(&mut self, cx: &LateContext<'_>, span: Span) {
         let call_site = span.source_callsite();
         let name = snippet(cx, cx.sess().source_map().span_until_char(call_site, '!'), "_");
@@ -94,42 +115,34 @@ impl MacroUseImports {
 }
 
 impl LateLintPass<'_> for MacroUseImports {
+    fn check_crate(&mut self, cx: &LateContext<'_>) {
+        for id in cx.tcx.hir_free_items() {
+            self.collect_import(cx, cx.tcx.hir_item(id));
+        }
+    }
+
     fn check_item(&mut self, cx: &LateContext<'_>, item: &hir::Item<'_>) {
-        if cx.sess().opts.edition >= Edition::Edition2018
-            && let hir::ItemKind::Use(UseTree { prefix, .. }) = &item.kind
-            && let hir_id = item.hir_id()
-            && let attrs = cx.tcx.hir_attrs(hir_id)
-            && let Some(mac_attr_span) = find_attr!(attrs, MacroUse {span, ..} => *span)
-            && let Some(Res::Def(DefKind::Mod, id)) = prefix.res.type_ns
-            && !id.is_local()
-        {
-            for kid in cx.tcx.module_children(id) {
-                if let Res::Def(DefKind::Macro(_mac_type), mac_id) = kid.res {
-                    let def_path = cx.tcx.def_path_str(mac_id);
-                    self.imports.push((def_path, mac_attr_span, hir_id));
-                }
-            }
-        } else if item.span.from_expansion() {
+        if !self.imports.is_empty() && !self.import_items.contains(&item.hir_id()) && item.span.from_expansion() {
             self.push_unique_macro_pat_ty(cx, item.span);
         }
     }
     fn check_expr(&mut self, cx: &LateContext<'_>, expr: &hir::Expr<'_>) {
-        if expr.span.from_expansion() {
+        if !self.imports.is_empty() && expr.span.from_expansion() {
             self.push_unique_macro(cx, expr.span);
         }
     }
     fn check_stmt(&mut self, cx: &LateContext<'_>, stmt: &hir::Stmt<'_>) {
-        if stmt.span.from_expansion() {
+        if !self.imports.is_empty() && stmt.span.from_expansion() {
             self.push_unique_macro(cx, stmt.span);
         }
     }
     fn check_pat(&mut self, cx: &LateContext<'_>, pat: &hir::Pat<'_>) {
-        if pat.span.from_expansion() {
+        if !self.imports.is_empty() && pat.span.from_expansion() {
             self.push_unique_macro_pat_ty(cx, pat.span);
         }
     }
     fn check_ty(&mut self, cx: &LateContext<'_>, ty: &hir::Ty<'_, AmbigArg>) {
-        if ty.span.from_expansion() {
+        if !self.imports.is_empty() && ty.span.from_expansion() {
             self.push_unique_macro_pat_ty(cx, ty.span);
         }
     }
