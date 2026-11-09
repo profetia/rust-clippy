@@ -127,7 +127,7 @@ impl Crate {
             cmd.args(&[
                 "record",
                 "-e",
-                "cpu-clock",
+                "instructions",
                 "--call-graph",
                 "dwarf",
                 "--quiet",     // Do not tamper with lintcheck's normal output
