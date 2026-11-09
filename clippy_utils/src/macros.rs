@@ -210,24 +210,31 @@ thread_local! {
 }
 
 fn first_node_in_macro_uncached(cx: &LateContext<'_>, node: &impl HirNode) -> Option<ExpnId> {
+    // get the parent node, possibly skipping over a statement
+    let mut parent_iter = cx.tcx.hir_parent_iter(node.hir_id());
+    let parent_span = match parent_iter.next() {
+        None => None,
+        Some((_, Node::Stmt(_))) => parent_iter.next().map(|(parent_id, _)| cx.tcx.hir_span(parent_id)),
+        Some((parent_id, _)) => Some(cx.tcx.hir_span(parent_id)),
+    };
+
+    // Equal syntax contexts have identical expansion ancestry, so `node` cannot be the first node
+    // produced by a macro. This is the common case for nodes within a macro expansion and avoids
+    // walking both macro backtraces below.
+    if parent_span.is_some_and(|span| span.eq_ctxt(node.span())) {
+        return None;
+    }
+
     // get the macro expansion or return `None` if not found
     // `macro_backtrace` importantly ignores desugaring expansions
     let expn = macro_backtrace(node.span()).next()?.expn;
 
-    // get the parent node, possibly skipping over a statement
     // if the parent is not found, it is sensible to return `Some(root)`
-    let mut parent_iter = cx.tcx.hir_parent_iter(node.hir_id());
-    let (parent_id, _) = match parent_iter.next() {
-        None => return Some(ExpnId::root()),
-        Some((_, Node::Stmt(_))) => match parent_iter.next() {
-            None => return Some(ExpnId::root()),
-            Some(next) => next,
-        },
-        Some(next) => next,
+    let Some(parent_span) = parent_span else {
+        return Some(ExpnId::root());
     };
 
     // get the macro expansion of the parent node
-    let parent_span = cx.tcx.hir_span(parent_id);
     let Some(parent_macro_call) = macro_backtrace(parent_span).next() else {
         // the parent node is not in a macro
         return Some(ExpnId::root());

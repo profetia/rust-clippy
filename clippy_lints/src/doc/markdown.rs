@@ -126,7 +126,10 @@ fn check_word(
         s != "-" && s.contains('-')
     }
 
-    if let Ok(url) = Url::parse(word)
+    // Parsing without a base URL only accepts absolute URLs, which require a `:` after the scheme.
+    // Avoid running the URL parser for ordinary prose words.
+    if word.contains(':')
+        && let Ok(url) = Url::parse(word)
         // try to get around the fact that `foo::bar` parses as a valid URL
         && !url.cannot_be_a_base()
     {
