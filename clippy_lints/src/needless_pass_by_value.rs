@@ -136,6 +136,37 @@ impl<'tcx> LateLintPass<'tcx> for NeedlessPassByValue {
             })
             .collect::<Vec<_>>();
 
+        let fn_sig = cx.tcx.fn_sig(fn_def_id).instantiate_identity().skip_norm_wip();
+        let fn_sig = cx.tcx.liberate_late_bound_regions(fn_def_id.to_def_id(), fn_sig);
+
+        // All spans generated from a proc-macro invocation are the same.
+        if decl.inputs.iter().any(|input| span == input.span) {
+            return;
+        }
+
+        // Avoid walking the function body if every parameter can be ruled out using only its
+        // pattern and type. The checks omitted here still run below for possible candidates.
+        let has_possible_candidate = decl
+            .inputs
+            .iter()
+            .zip(fn_sig.inputs())
+            .zip(body.params)
+            .enumerate()
+            .any(|(idx, ((_, &ty), arg))| {
+                let PatKind::Binding(BindingMode(_, Mutability::Not), _, ident, _) = arg.pat.kind else {
+                    return false;
+                };
+                !(ident.name.as_str().starts_with('_')
+                    || is_self(arg)
+                    || ty.is_mutable_ptr()
+                    || is_copy(cx, ty)
+                    || !ty.is_sized(cx.tcx, cx.typing_env())
+                    || idx == 0 && ident.name == kw::SelfLower)
+            });
+        if !has_possible_candidate {
+            return;
+        }
+
         // Collect moved variables and spans which will need dereferencing from the
         // function body.
         let MovedVariablesCtxt { moved_vars } = {
@@ -146,15 +177,7 @@ impl<'tcx> LateLintPass<'tcx> for NeedlessPassByValue {
             ctx
         };
 
-        let fn_sig = cx.tcx.fn_sig(fn_def_id).instantiate_identity().skip_norm_wip();
-        let fn_sig = cx.tcx.liberate_late_bound_regions(fn_def_id.to_def_id(), fn_sig);
-
         for (idx, ((input, &ty), arg)) in decl.inputs.iter().zip(fn_sig.inputs()).zip(body.params).enumerate() {
-            // All spans generated from a proc-macro invocation are the same...
-            if span == input.span {
-                return;
-            }
-
             // Ignore `self`s and params whose variable name starts with an underscore
             if let PatKind::Binding(.., ident, _) = arg.pat.kind {
                 if idx == 0 && ident.name == kw::SelfLower {
