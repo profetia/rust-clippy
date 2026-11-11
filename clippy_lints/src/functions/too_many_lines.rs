@@ -6,6 +6,7 @@ use rustc_hir::def_id::LocalDefId;
 use rustc_hir::intravisit::FnKind;
 use rustc_lint::{LateContext, LintContext as _};
 use rustc_span::Span;
+use std::sync::Arc;
 
 use super::TOO_MANY_LINES;
 
@@ -24,6 +25,20 @@ pub(super) fn check_fn(
     }
 
     if is_lint_allowed(cx, TOO_MANY_LINES, cx.tcx.local_def_id_to_hir_id(def_id)) {
+        return;
+    }
+
+    // The number of physical lines touched by the body is an upper bound for
+    // the number of non-comment lines counted below. Most functions are short,
+    // so avoid extracting and scanning their source text.
+    let source_map = cx.sess().source_map();
+    if let (Ok(first_line), Ok(last_line)) = (
+        source_map.lookup_line(body.value.span.lo()),
+        source_map.lookup_line(body.value.span.hi()),
+    ) && Arc::ptr_eq(&first_line.sf, &last_line.sf)
+        && u64::try_from(last_line.line.saturating_sub(first_line.line))
+            .is_ok_and(|lines| lines < too_many_lines_threshold)
+    {
         return;
     }
 
