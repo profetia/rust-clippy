@@ -7,6 +7,7 @@ use core::{iter, slice};
 use itertools::Itertools as _;
 use rustc_arena::DroplessArena;
 use rustc_ast::ast::LitKind;
+use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_hir::def_id::DefId;
 use rustc_hir::{Arm, Expr, HirId, HirIdMap, HirIdMapEntry, HirIdSet, Pat, PatExpr, PatExprKind, PatKind, RangeEnd};
@@ -27,33 +28,53 @@ pub(super) fn check<'tcx>(cx: &LateContext<'tcx>, arms: &'tcx [Arm<'_>]) {
         .map(|a| NormalizedPat::from_pat(cx, &arena, a.pat))
         .collect();
 
+    let mut all_constructors = FxHashSet::default();
+    let mut arm_constructors = FxHashSet::default();
+    #[expect(
+        rustc::potential_query_instability,
+        reason = "iteration order does not affect whether the constructor sets overlap"
+    )]
+    let constructors_are_disjoint = normalized_pats.iter().all(|pat| {
+        arm_constructors.clear();
+        pat.collect_constructor_ids(&mut arm_constructors)
+            && arm_constructors.iter().all(|&id| all_constructors.insert(id))
+    });
+
     // The furthest forwards a pattern can move without semantic changes
-    let forwards_blocking_idxs: Vec<_> = normalized_pats
-        .iter()
-        .enumerate()
-        .map(|(i, pat)| {
-            (normalized_pats[i + 1..].iter().enumerate())
-                .find_map(|(j, other)| pat.has_overlapping_values(other).then_some(i + 1 + j))
-                .unwrap_or(normalized_pats.len())
-        })
-        .collect();
+    let forwards_blocking_idxs: Vec<_> = if constructors_are_disjoint {
+        vec![normalized_pats.len(); normalized_pats.len()]
+    } else {
+        normalized_pats
+            .iter()
+            .enumerate()
+            .map(|(i, pat)| {
+                (normalized_pats[i + 1..].iter().enumerate())
+                    .find_map(|(j, other)| pat.has_overlapping_values(other).then_some(i + 1 + j))
+                    .unwrap_or(normalized_pats.len())
+            })
+            .collect()
+    };
 
     // The furthest backwards a pattern can move without semantic changes
-    let backwards_blocking_idxs: Vec<_> = normalized_pats
-        .iter()
-        .enumerate()
-        .map(|(i, pat)| {
-            iter::zip(
-                normalized_pats[..i].iter().enumerate().rev(),
-                forwards_blocking_idxs[..i].iter().copied().rev(),
-            )
-            .skip_while(|&(_, forward_block)| forward_block > i)
-            .find_map(|((j, other), forward_block)| {
-                (forward_block == i || pat.has_overlapping_values(other)).then_some(j)
+    let backwards_blocking_idxs: Vec<_> = if constructors_are_disjoint {
+        vec![0; normalized_pats.len()]
+    } else {
+        normalized_pats
+            .iter()
+            .enumerate()
+            .map(|(i, pat)| {
+                iter::zip(
+                    normalized_pats[..i].iter().enumerate().rev(),
+                    forwards_blocking_idxs[..i].iter().copied().rev(),
+                )
+                .skip_while(|&(_, forward_block)| forward_block > i)
+                .find_map(|((j, other), forward_block)| {
+                    (forward_block == i || pat.has_overlapping_values(other)).then_some(j)
+                })
+                .unwrap_or(0)
             })
-            .unwrap_or(0)
-        })
-        .collect();
+            .collect()
+    };
 
     let eq = |&(lindex, lhs): &(usize, &Arm<'_>), &(rindex, rhs): &(usize, &Arm<'_>)| -> bool {
         let min_index = usize::min(lindex, rindex);
@@ -260,6 +281,17 @@ fn iter_matching_struct_fields<'a>(
 
 #[expect(clippy::similar_names, clippy::too_many_lines)]
 impl<'a> NormalizedPat<'a> {
+    fn collect_constructor_ids(&self, ids: &mut FxHashSet<DefId>) -> bool {
+        match *self {
+            Self::Struct(Some(id), _) | Self::Tuple(Some(id), _) | Self::Path(Some(id)) => {
+                ids.insert(id);
+                true
+            },
+            Self::Or(pats) => pats.iter().all(|pat| pat.collect_constructor_ids(ids)),
+            _ => false,
+        }
+    }
+
     fn from_pat(cx: &LateContext<'_>, arena: &'a DroplessArena, pat: &'a Pat<'_>) -> Self {
         match pat.kind {
             PatKind::Missing => unreachable!(),
