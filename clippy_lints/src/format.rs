@@ -1,13 +1,16 @@
 use clippy_utils::diagnostics::span_lint_and_sugg;
 use clippy_utils::get_parent_expr;
-use clippy_utils::macros::{FormatArgsStorage, find_format_arg_expr, first_node_in_macro, matching_root_macro_call};
+use clippy_utils::macros::{FormatArgsStorage, find_format_arg_expr, first_node_in_macro};
 use clippy_utils::source::{SpanExt as _, snippet_with_context};
 use clippy_utils::sugg::Sugg;
 use rustc_ast::{FormatArgsPiece, FormatOptions, FormatTrait};
+use rustc_data_structures::fx::FxHashMap;
 use rustc_errors::Applicability;
+use rustc_hir::def_id::DefId;
 use rustc_hir::{BorrowKind, Expr, ExprKind, Mutability};
 use rustc_lint::{LateContext, LateLintPass, impl_lint_pass};
 use rustc_middle::ty;
+use rustc_span::hygiene::{ExpnId, ExpnKind, SyntaxContext};
 use rustc_span::{Span, sym};
 
 declare_clippy_lint! {
@@ -41,13 +44,19 @@ declare_clippy_lint! {
 
 impl_lint_pass!(UselessFormat => [USELESS_FORMAT]);
 
+type RootMacroCall = (DefId, ExpnId, Span);
+
 pub struct UselessFormat {
     format_args: FormatArgsStorage,
+    root_macro_calls: FxHashMap<ExpnId, Option<RootMacroCall>>,
 }
 
 impl UselessFormat {
     pub fn new(format_args: FormatArgsStorage) -> Self {
-        Self { format_args }
+        Self {
+            format_args,
+            root_macro_calls: FxHashMap::default(),
+        }
     }
 }
 
@@ -61,12 +70,12 @@ impl<'tcx> LateLintPass<'tcx> for UselessFormat {
         //
         // `first_node_in_macro` is checked first because it is cheaper.
         if let Some(p_expn) = first_node_in_macro(cx, expr)
-            && let Some(macro_call) = matching_root_macro_call(cx, expr.span, sym::format_macro)
-            && p_expn != macro_call.expn
-            && let Some(format_args) = self.format_args.get(cx, expr, macro_call.expn)
+            && let Some((def_id, macro_expn, call_site)) = root_macro_call(expr.span, &mut self.root_macro_calls)
+            && cx.tcx.is_diagnostic_item(sym::format_macro, def_id)
+            && p_expn != macro_expn
+            && let Some(format_args) = self.format_args.get(cx, expr, macro_expn)
         {
             let mut applicability = Applicability::MachineApplicable;
-            let call_site = macro_call.span;
 
             match (format_args.arguments.all_args(), &format_args.template[..]) {
                 ([], []) => span_lint(
@@ -143,6 +152,42 @@ impl<'tcx> LateLintPass<'tcx> for UselessFormat {
             }
         }
     }
+}
+
+fn root_macro_call(mut span: Span, cache: &mut FxHashMap<ExpnId, Option<RootMacroCall>>) -> Option<RootMacroCall> {
+    let mut uncached = Vec::new();
+    let mut root_macro = None;
+
+    let root_macro = loop {
+        let ctxt = span.ctxt();
+        if ctxt == SyntaxContext::root() {
+            break root_macro;
+        }
+
+        let expn = ctxt.outer_expn();
+        if let Some(&cached) = cache.get(&expn) {
+            // A macro in the cached outer suffix is the root even if the uncached inner prefix
+            // also contains macros. If the suffix contains none, keep the outermost macro found
+            // in the prefix.
+            break cached.or(root_macro);
+        }
+
+        uncached.push(expn);
+        let data = expn.expn_data();
+        if matches!(data.kind, ExpnKind::Macro(..))
+            && let Some(def_id) = data.macro_def_id
+        {
+            root_macro = Some((def_id, expn, data.call_site));
+        }
+        span = data.call_site;
+    };
+
+    // Every expansion visited above has the same root macro. Caching the whole path lets spans
+    // with different inner expansions share their usually much longer outer expansion suffix.
+    for expn in uncached {
+        cache.insert(expn, root_macro);
+    }
+    root_macro
 }
 
 fn span_lint(cx: &LateContext<'_>, span: Span, expl: &str, sugg: String, applicability: Applicability) {
