@@ -118,17 +118,33 @@ fn check_word(
             && s.chars().filter(|&c| c.is_lowercase()).take(1).count() > 0
     }
 
-    fn has_underscore(s: &str) -> bool {
-        s != "_" && !s.contains("\\_") && s.contains('_')
-    }
-
-    fn has_hyphen(s: &str) -> bool {
-        s != "-" && s.contains('-')
-    }
-
     // Parsing without a base URL only accepts absolute URLs, which require a `:` after the scheme.
     // Avoid running the URL parser for ordinary prose words.
-    if word.contains(':')
+    let mut has_colon = false;
+    let mut has_double_colon = false;
+    let mut has_underscore = false;
+    let mut has_escaped_underscore = false;
+    let mut has_hyphen = false;
+    let mut previous = None;
+    for byte in word.bytes() {
+        match byte {
+            b':' => {
+                has_colon = true;
+                has_double_colon |= previous == Some(b':');
+            },
+            b'_' => {
+                has_underscore = true;
+                has_escaped_underscore |= previous == Some(b'\\');
+            },
+            b'-' => has_hyphen = true,
+            _ => {},
+        }
+        previous = Some(byte);
+    }
+    has_underscore &= word != "_" && !has_escaped_underscore;
+    has_hyphen &= word != "-";
+
+    if has_colon
         && let Ok(url) = Url::parse(word)
         // try to get around the fact that `foo::bar` parses as a valid URL
         && !url.cannot_be_a_base()
@@ -158,11 +174,11 @@ fn check_word(
     // We assume that mixed-case words are not meant to be put inside backticks. (Issue #2343)
     //
     // We also assume that backticks are not necessary if inside a quote. (Issue #10262)
-    if code_level > 0 || blockquote_level > 0 || (has_underscore(word) && has_hyphen(word)) {
+    if code_level > 0 || blockquote_level > 0 || (has_underscore && has_hyphen) {
         return;
     }
 
-    if has_underscore(word) || word.contains("::") || is_camel_case(word) || word.ends_with("()") {
+    if has_underscore || has_double_colon || is_camel_case(word) || word.ends_with("()") {
         let Some(fragment_span) = fragments.span(cx, range.clone()) else {
             return;
         };
