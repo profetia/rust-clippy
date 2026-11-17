@@ -56,7 +56,7 @@ declare_lint_pass!(ComparisonChain => [COMPARISON_CHAIN]);
 
 impl<'tcx> LateLintPass<'tcx> for ComparisonChain {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
-        if expr.span.from_expansion() {
+        if expr.span.from_expansion() || !matches!(expr.kind, ExprKind::If(..)) {
             return;
         }
 
