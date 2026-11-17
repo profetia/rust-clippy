@@ -77,6 +77,7 @@ pub struct UnconditionalRecursion {
     /// The key is the `DefId` of the type implementing the `Default` trait and the value is the
     /// `DefId` of the return call.
     default_impl_for_type: FxHashMap<DefId, DefId>,
+    default_impl_for_type_initialized: bool,
 }
 
 fn span_error(cx: &LateContext<'_>, method_span: Span, expr: &Expr<'_>) {
@@ -332,9 +333,11 @@ where
 
 impl UnconditionalRecursion {
     fn init_default_impl_for_type_if_needed(&mut self, cx: &LateContext<'_>) {
-        if self.default_impl_for_type.is_empty()
-            && let Some(default_trait_id) = cx.tcx.get_diagnostic_item(sym::Default)
-        {
+        if !self.default_impl_for_type_initialized {
+            self.default_impl_for_type_initialized = true;
+            let Some(default_trait_id) = cx.tcx.get_diagnostic_item(sym::Default) else {
+                return;
+            };
             let impls = cx.tcx.trait_impls_of(default_trait_id);
             for (ty, impl_def_ids) in impls.non_blanket_impls() {
                 let Some(self_def_id) = ty.def() else { continue };
