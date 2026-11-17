@@ -1,6 +1,7 @@
 use clippy_utils::diagnostics::span_lint_and_help;
 use clippy_utils::res::MaybeDef as _;
 use clippy_utils::ty::ty_from_hir_ty;
+use rustc_hir::def::{DefKind, Res};
 use rustc_hir::{self as hir, AmbigArg, HirId, ItemKind, Node};
 use rustc_lint::{LateContext, LateLintPass, declare_lint_pass};
 use rustc_middle::ty::layout::LayoutOf as _;
@@ -45,6 +46,7 @@ declare_lint_pass!(ZeroSizedMapValues => [ZERO_SIZED_MAP_VALUES]);
 impl LateLintPass<'_> for ZeroSizedMapValues {
     fn check_ty<'tcx>(&mut self, cx: &LateContext<'tcx>, hir_ty: &hir::Ty<'tcx, AmbigArg>) {
         if !hir_ty.span.from_expansion()
+            && can_be_map(cx, hir_ty)
             && !in_trait_impl(cx, hir_ty.hir_id)
             // We don't care about infer vars
             && let ty = ty_from_hir_ty(cx, hir_ty.as_unambig_ty())
@@ -71,6 +73,23 @@ impl LateLintPass<'_> for ZeroSizedMapValues {
                 "consider using a set instead",
             );
         }
+    }
+}
+
+fn can_be_map(cx: &LateContext<'_>, hir_ty: &hir::Ty<'_, AmbigArg>) -> bool {
+    let hir::TyKind::Path(qpath) = hir_ty.kind else {
+        return false;
+    };
+    let hir::QPath::Resolved(_, path) = qpath else {
+        return true;
+    };
+
+    match path.res {
+        Res::Def(DefKind::Struct, def_id) => {
+            matches!(cx.tcx.get_diagnostic_name(def_id), Some(sym::HashMap | sym::BTreeMap))
+        },
+        Res::Def(DefKind::Enum | DefKind::Union, _) | Res::PrimTy(_) => false,
+        _ => true,
     }
 }
 
