@@ -983,6 +983,10 @@ fn check_attrs(cx: &LateContext<'_>, valid_idents: &FxHashSet<String>, attrs: &[
         Some(("fake".into(), "fake".into()))
     }
 
+    if attrs.is_empty() {
+        return Some(DocHeaders::default());
+    }
+
     if suspicious_doc_comments::check(cx, attrs) || is_doc_hidden(attrs) {
         return None;
     }
