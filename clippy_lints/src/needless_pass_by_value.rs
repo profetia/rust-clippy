@@ -178,14 +178,19 @@ impl<'tcx> LateLintPass<'tcx> for NeedlessPassByValue {
         };
 
         for (idx, ((input, &ty), arg)) in decl.inputs.iter().zip(fn_sig.inputs()).zip(body.params).enumerate() {
-            // Ignore `self`s and params whose variable name starts with an underscore
-            if let PatKind::Binding(.., ident, _) = arg.pat.kind {
-                if idx == 0 && ident.name == kw::SelfLower {
-                    continue;
-                }
-                if ident.name.as_str().starts_with('_') {
-                    continue;
-                }
+            let PatKind::Binding(BindingMode(_, Mutability::Not), canonical_id, ident, _) = arg.pat.kind else {
+                continue;
+            };
+
+            if ident.name.as_str().starts_with('_')
+                || is_self(arg)
+                || ty.is_mutable_ptr()
+                || is_copy(cx, ty)
+                || !ty.is_sized(cx.tcx, cx.typing_env())
+                || idx == 0 && ident.name == kw::SelfLower
+                || moved_vars.contains(&canonical_id)
+            {
+                continue;
             }
 
             //
@@ -207,24 +212,17 @@ impl<'tcx> LateLintPass<'tcx> for NeedlessPassByValue {
                 )
             };
 
-            if !is_self(arg)
-                && !ty.is_mutable_ptr()
-                && !is_copy(cx, ty)
-                && ty.is_sized(cx.tcx, cx.typing_env())
-                && !allowed_traits.iter().any(|&t| {
-                    implements_trait_with_env_from_iter(
-                        cx.tcx,
-                        cx.typing_env(),
-                        ty,
-                        t,
-                        None,
-                        [None::<ty::GenericArg<'tcx>>],
-                    )
-                })
-                && !implements_borrow_trait
+            if !allowed_traits.iter().any(|&t| {
+                implements_trait_with_env_from_iter(
+                    cx.tcx,
+                    cx.typing_env(),
+                    ty,
+                    t,
+                    None,
+                    [None::<ty::GenericArg<'tcx>>],
+                )
+            }) && !implements_borrow_trait
                 && !all_borrowable_trait
-                && let PatKind::Binding(BindingMode(_, Mutability::Not), canonical_id, ..) = arg.pat.kind
-                && !moved_vars.contains(&canonical_id)
             {
                 // Dereference suggestion
                 let sugg = |diag: &mut Diag<'_>| {
