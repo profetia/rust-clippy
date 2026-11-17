@@ -168,7 +168,7 @@ impl IncompatibleMsrv {
     fn emit_lint_if_under_msrv(
         &mut self,
         cx: &LateContext<'_>,
-        needs_const: bool,
+        needs_const: impl FnOnce() -> bool,
         def_id: DefId,
         node: HirId,
         span: Span,
@@ -177,6 +177,7 @@ impl IncompatibleMsrv {
             // No stability attributes to lookup for these items.
             return;
         }
+        let needs_const = needs_const();
         // Use `from_expansion` to fast-path the common case.
         if span.from_expansion() {
             let expn = span.ctxt().outer_expn_data();
@@ -222,24 +223,32 @@ impl<'tcx> LateLintPass<'tcx> for IncompatibleMsrv {
         match expr.kind {
             ExprKind::MethodCall(_, _, _, span) => {
                 if let Some(method_did) = cx.typeck_results().type_dependent_def_id(expr.hir_id) {
-                    self.emit_lint_if_under_msrv(cx, is_in_const_context(cx), method_did, expr.hir_id, span);
+                    self.emit_lint_if_under_msrv(cx, || is_in_const_context(cx), method_did, expr.hir_id, span);
                 }
             },
             ExprKind::Call(callee, _) if let ExprKind::Path(qpath) = callee.kind => {
                 self.called_path = Some(callee.hir_id);
-                let needs_const = is_in_const_context(cx);
-                let def_id = if let Some(def_id) = cx.qpath_res(&qpath, callee.hir_id).opt_def_id() {
-                    def_id
-                } else if needs_const && let ty::FnDef(def_id, _) = *cx.typeck_results().expr_ty(callee).kind() {
+                let (def_id, needs_const) = if let Some(def_id) = cx.qpath_res(&qpath, callee.hir_id).opt_def_id() {
+                    (def_id, None)
+                } else if let needs_const = is_in_const_context(cx)
+                    && needs_const
+                    && let ty::FnDef(def_id, _) = *cx.typeck_results().expr_ty(callee).kind()
+                {
                     // Edge case where a function is first assigned then called.
                     // We previously would have warned for the non-const MSRV, when
                     // checking the path, but now that it's called the const MSRV
                     // must also be met.
-                    def_id
+                    (def_id, Some(needs_const))
                 } else {
                     return;
                 };
-                self.emit_lint_if_under_msrv(cx, needs_const, def_id, expr.hir_id, callee.span);
+                self.emit_lint_if_under_msrv(
+                    cx,
+                    || needs_const.unwrap_or_else(|| is_in_const_context(cx)),
+                    def_id,
+                    expr.hir_id,
+                    callee.span,
+                );
             },
             // Desugaring into function calls by the compiler will use `QPath::LangItem` variants. Those should
             // not be linted as they will not be generated in older compilers if the function is not available,
@@ -248,7 +257,7 @@ impl<'tcx> LateLintPass<'tcx> for IncompatibleMsrv {
                 if let Some(path_def_id) = cx.qpath_res(&qpath, expr.hir_id).opt_def_id()
                     && self.called_path != Some(expr.hir_id) =>
             {
-                self.emit_lint_if_under_msrv(cx, false, path_def_id, expr.hir_id, expr.span);
+                self.emit_lint_if_under_msrv(cx, || false, path_def_id, expr.hir_id, expr.span);
             },
             _ => {},
         }
@@ -260,7 +269,7 @@ impl<'tcx> LateLintPass<'tcx> for IncompatibleMsrv {
             // `CStr` and `CString` have been moved around but have been available since Rust 1.0.0
             && !matches!(cx.tcx.get_diagnostic_name(ty_def_id), Some(sym::cstr_type | sym::cstring_type))
         {
-            self.emit_lint_if_under_msrv(cx, false, ty_def_id, hir_ty.hir_id, hir_ty.span);
+            self.emit_lint_if_under_msrv(cx, || false, ty_def_id, hir_ty.hir_id, hir_ty.span);
         }
     }
 }

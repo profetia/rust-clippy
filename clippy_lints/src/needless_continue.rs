@@ -133,7 +133,9 @@ impl<'tcx> LateLintPass<'tcx> for NeedlessContinue {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'tcx>) {
         // We cannot use `from_expansion` because for loops, while loops and while let loops are desugared
         // into `loop` expressions.
-        if !matches!(expr.span.ctxt().outer_expn_data().kind, ExpnKind::Macro(..)) {
+        if matches!(expr.kind, ExprKind::DropTemps(_) | ExprKind::Loop(..))
+            && !matches!(expr.span.ctxt().outer_expn_data().kind, ExpnKind::Macro(..))
+        {
             check_and_warn(cx, expr);
         }
     }
