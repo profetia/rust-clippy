@@ -505,13 +505,18 @@ struct Stats {
     terminals: [usize; 32],
     negations: usize,
     ops: usize,
+    has_negation_or_constant: bool,
 }
 
 fn terminal_stats(b: &Bool) -> Stats {
     fn recurse(b: &Bool, stats: &mut Stats) {
         match b {
-            True | False => stats.ops += 1,
+            True | False => {
+                stats.ops += 1;
+                stats.has_negation_or_constant = true;
+            },
             Not(inner) => {
+                stats.has_negation_or_constant = true;
                 match **inner {
                     And(_) | Or(_) => stats.ops += 1, // brackets are also operations
                     _ => stats.negations += 1,
@@ -544,6 +549,11 @@ impl<'tcx> NonminimalBoolVisitor<'_, 'tcx> {
             if stats.ops > 7 {
                 // QMC has exponentially slow behavior as the number of ops increases.
                 // See #825, #13206
+                return;
+            }
+            // A positive read-once formula cannot be simplified: every terminal is
+            // essential and joining `n` terminals always requires `n - 1` operations.
+            if !stats.has_negation_or_constant && stats.terminals.iter().all(|&count| count <= 1) {
                 return;
             }
             let mut simplified = expr.simplify();
