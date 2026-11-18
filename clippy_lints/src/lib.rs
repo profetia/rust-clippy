@@ -474,21 +474,33 @@ pub fn register_lint_passes(store: &mut rustc_lint::LintStore, conf: &'static Co
         }));
     }
 
+    let mod_format_args_storage = format_args_storage.clone();
+    let mod_active_passes = std::sync::OnceLock::new();
     store.register_late_lint_mod_pass(Box::new(move |tcx: TyCtxt<'_>| {
-        let skippable_lints = tcx.skippable_lints(());
-        let is_active = |lints: &rustc_lint::LintVec| is_lint_pass_required(skippable_lints, lints);
-        Box::new(CombinedLateLintModPass::new(conf, &is_active))
+        // The set of skippable lints is crate-wide, so compute this mask once instead of
+        // allocating and checking every pass's `LintVec` for every module.
+        let active_passes = mod_active_passes.get_or_init(|| {
+            let skippable_lints = tcx.skippable_lints(());
+            let is_active = |lints: &rustc_lint::LintVec| is_lint_pass_required(skippable_lints, lints);
+            CombinedLateLintModPass::active(&is_active)
+        });
+        Box::new(CombinedLateLintModPass::new(
+            conf,
+            mod_format_args_storage.clone(),
+            active_passes,
+        ))
     }));
 
     store.register_late_lint_pass(Box::new(move |tcx: TyCtxt<'_>| {
         let skippable_lints = tcx.skippable_lints(());
         let is_active = |lints: &rustc_lint::LintVec| is_lint_pass_required(skippable_lints, lints);
+        let active_passes = CombinedLateLintPass::active(&is_active);
         Box::new(CombinedLateLintPass::new(
             tcx,
             conf,
             format_args_storage.clone(),
             attr_storage.clone(),
-            &is_active,
+            &active_passes,
         ))
     }));
 }
@@ -560,7 +572,7 @@ rustc_lint::early_lint_methods!(
 #[rustfmt::skip]
 rustc_lint::late_lint_methods!(
     crate::combined_late_lint_pass,
-    [CombinedLateLintModPass, (conf: &'static Conf), [
+    [CombinedLateLintModPass, (conf: &'static Conf, format_args: FormatArgsStorage), [
         NonminimalBool: booleans::NonminimalBool = booleans::NonminimalBool::new(conf),
         Matches: matches::Matches = matches::Matches::new(conf),
         Documentation: doc::Documentation = doc::Documentation::new(conf),
@@ -807,6 +819,11 @@ rustc_lint::late_lint_methods!(
         Swap: swap::Swap = swap::Swap::new(conf),
         Unwrap: unwrap::Unwrap = unwrap::Unwrap::new(conf),
         ExtraUnusedTypeParameters: extra_unused_type_parameters::ExtraUnusedTypeParameters = extra_unused_type_parameters::ExtraUnusedTypeParameters::new(conf),
+        UnitTypes: unit_types::UnitTypes = unit_types::UnitTypes::new(format_args.clone()),
+        ExplicitWrite: explicit_write::ExplicitWrite = explicit_write::ExplicitWrite::new(format_args.clone()),
+        FormatImpl: format_impl::FormatImpl = format_impl::FormatImpl::new(format_args.clone()),
+        Write: write::Write = write::Write::new(conf, format_args.clone()),
+        FormatPushString: format_push_string::FormatPushString = format_push_string::FormatPushString::new(format_args.clone()),
     ]]
 );
 #[rustfmt::skip]
@@ -824,7 +841,6 @@ rustc_lint::late_lint_methods!(
         SameNameMethod: same_name_method::SameNameMethod = same_name_method::SameNameMethod,
         Shadow: shadow::Shadow = <shadow::Shadow>::default(),
         Methods: methods::Methods = methods::Methods::new(conf, format_args.clone()),
-        UnitTypes: unit_types::UnitTypes = unit_types::UnitTypes::new(format_args.clone()),
         MainRecursion: main_recursion::MainRecursion = <main_recursion::MainRecursion>::default(),
         NoEffect: no_effect::NoEffect = <no_effect::NoEffect>::default(),
         CognitiveComplexity: cognitive_complexity::CognitiveComplexity = cognitive_complexity::CognitiveComplexity::new(conf),
@@ -835,14 +851,12 @@ rustc_lint::late_lint_methods!(
         NewWithoutDefault: new_without_default::NewWithoutDefault = <new_without_default::NewWithoutDefault>::default(),
         Functions: functions::Functions = functions::Functions::new(tcx, conf),
         MissingDoc: missing_doc::MissingDoc = missing_doc::MissingDoc::new(conf),
-        ExplicitWrite: explicit_write::ExplicitWrite = explicit_write::ExplicitWrite::new(format_args.clone()),
         PassByRefOrValue: pass_by_ref_or_value::PassByRefOrValue = pass_by_ref_or_value::PassByRefOrValue::new(tcx, conf),
         UselessConversion: useless_conversion::UselessConversion = <useless_conversion::UselessConversion>::default(),
         QuestionMark: question_mark::QuestionMark = question_mark::QuestionMark::new(conf),
         MultipleInherentImpl: inherent_impl::MultipleInherentImpl = inherent_impl::MultipleInherentImpl::new(conf),
         NonCopyConst: non_copy_const::NonCopyConst<'tcx> = non_copy_const::NonCopyConst::new(tcx, conf),
         MutableKeyType: mut_key::MutableKeyType<'tcx> = mut_key::MutableKeyType::new(tcx, conf),
-        FormatImpl: format_impl::FormatImpl = format_impl::FormatImpl::new(format_args.clone()),
         ItemNameRepetitions: item_name_repetitions::ItemNameRepetitions = item_name_repetitions::ItemNameRepetitions::new(conf),
         Default: default::Default = <default::Default>::default(),
         LargeStackArrays: large_stack_arrays::LargeStackArrays = large_stack_arrays::LargeStackArrays::new(conf),
@@ -860,10 +874,8 @@ rustc_lint::late_lint_methods!(
         NeedlessLateInit: needless_late_init::NeedlessLateInit<'tcx> = needless_late_init::NeedlessLateInit::new(conf),
         OnlyUsedInRecursion: only_used_in_recursion::OnlyUsedInRecursion = <only_used_in_recursion::OnlyUsedInRecursion>::default(),
         DbgMacro: dbg_macro::DbgMacro = dbg_macro::DbgMacro::new(conf),
-        Write: write::Write = write::Write::new(conf, format_args.clone()),
         Cargo: cargo::Cargo = cargo::Cargo::new(conf),
         EmptyWithBrackets: empty_with_brackets::EmptyWithBrackets = empty_with_brackets::EmptyWithBrackets::default(),
-        FormatPushString: format_push_string::FormatPushString = format_push_string::FormatPushString::new(format_args.clone()),
         Operators: operators::Operators = operators::Operators::new(conf),
         StdReexports: std_instead_of_core::StdReexports = std_instead_of_core::StdReexports::new(conf),
         MinIdentChars: min_ident_chars::MinIdentChars = min_ident_chars::MinIdentChars::new(conf),
