@@ -21,7 +21,8 @@ use rustc_resolve::rustdoc::{
     DocFragment, add_doc_fragment, attrs_to_doc_fragments, main_body_opts, pulldown_cmark,
     source_span_for_markdown_range, span_of_fragments,
 };
-use rustc_span::Span;
+use rustc_span::{InnerSpan, Span};
+use std::cell::OnceCell;
 use std::ops::Range;
 use url::Url;
 
@@ -838,6 +839,7 @@ impl<'tcx> LateLintPass<'tcx> for Documentation {
 struct Fragments<'a> {
     doc: &'a str,
     fragments: &'a [DocFragment],
+    span_map: &'a OnceCell<Option<MarkdownSpanMap>>,
 }
 
 impl Fragments<'_> {
@@ -845,7 +847,114 @@ impl Fragments<'_> {
     /// caution.
     #[must_use]
     fn span(self, cx: &LateContext<'_>, range: Range<usize>) -> Option<Span> {
-        source_span_for_markdown_range(cx.tcx, self.doc, &range, self.fragments).map(|(sp, _)| sp)
+        let span_map = self
+            .span_map
+            .get_or_init(|| MarkdownSpanMap::new(cx, self.doc, self.fragments));
+        if let Some(span_map) = span_map
+            && let Some(span) = span_map.span(range.clone())
+        {
+            return Some(span);
+        }
+        source_span_for_markdown_range(cx.tcx, self.doc, &range, self.fragments).map(|(span, _)| span)
+    }
+}
+
+/// Maps byte offsets in simple doc comments back to their source offsets.
+///
+/// `source_span_for_markdown_range` performs this scan from the start of the comment for every
+/// range. Documentation lints commonly request many ranges in source order, so build the line map
+/// once and reuse it. This covers sugared doc comments and raw single-fragment docs whose source
+/// text is unchanged. More complicated forms of documentation keep using rustc's general mapper.
+struct MarkdownSpanMap {
+    span: Span,
+    markdown_line_starts: Vec<usize>,
+    source_line_starts: Vec<usize>,
+}
+
+impl MarkdownSpanMap {
+    fn new(cx: &LateContext<'_>, markdown: &str, fragments: &[DocFragment]) -> Option<Self> {
+        if let [fragment] = fragments
+            && !fragment.kind.is_sugared()
+            && let Ok(snippet) = cx.tcx.sess.source_map().span_to_snippet(fragment.span)
+            && snippet.trim_end() == markdown.trim_end()
+        {
+            return Some(Self {
+                span: fragment.span,
+                markdown_line_starts: vec![0],
+                source_line_starts: vec![0],
+            });
+        }
+
+        if !fragments.iter().all(|fragment| fragment.kind.is_sugared()) {
+            return None;
+        }
+
+        let span = span_of_fragments(fragments)?;
+        let snippet = cx.tcx.sess.source_map().span_to_snippet(span).ok()?;
+        let mut source_lines = snippet.split_terminator('\n');
+        let mut source_offset = 0usize;
+        let mut markdown_offset = 0usize;
+        let mut markdown_line_starts = Vec::new();
+        let mut source_line_starts = Vec::new();
+
+        for markdown_line in markdown.split_terminator('\n') {
+            loop {
+                let source_line = source_lines.next()?;
+                let source_line_start = source_offset;
+                source_offset += source_line.len() + 1;
+                let source_line_span =
+                    span.from_inner(InnerSpan::new(source_line_start, source_line_start + source_line.len()));
+                let fragment = fragments
+                    .iter()
+                    .find(|fragment| fragment.span.overlaps(source_line_span));
+
+                if let Some(fragment) = fragment
+                    && let Some(offset) = source_line.find(markdown_line)
+                {
+                    if (fragment.span.lo() > source_line_span.lo()
+                        && source_line[..usize::try_from(fragment.span.lo().0 - source_line_span.lo().0).ok()?]
+                            .chars()
+                            .any(|c| !c.is_whitespace()))
+                        || (fragment.span.hi() < source_line_span.hi()
+                            && source_line[usize::try_from(fragment.span.hi().0 - source_line_span.lo().0).ok()?..]
+                                .chars()
+                                .any(|c| !c.is_whitespace()))
+                    {
+                        return None;
+                    }
+
+                    markdown_line_starts.push(markdown_offset);
+                    source_line_starts.push(source_line_start + offset);
+                    markdown_offset += markdown_line.len() + 1;
+                    break;
+                }
+
+                // A non-whitespace line between two doc fragments makes mapping a range across
+                // those fragments ambiguous. Let rustc's range-specific mapper handle it.
+                if !markdown_line_starts.is_empty() && source_line.chars().any(|c| !c.is_whitespace()) {
+                    return None;
+                }
+            }
+        }
+
+        (!markdown_line_starts.is_empty()).then_some(Self {
+            span,
+            markdown_line_starts,
+            source_line_starts,
+        })
+    }
+
+    fn span(&self, range: Range<usize>) -> Option<Span> {
+        fn map_offset(offset: usize, markdown_starts: &[usize], source_starts: &[usize]) -> Option<usize> {
+            let line = markdown_starts
+                .partition_point(|&start| start <= offset)
+                .checked_sub(1)?;
+            Some(source_starts[line] + offset - markdown_starts[line])
+        }
+
+        let start = map_offset(range.start, &self.markdown_line_starts, &self.source_line_starts)?;
+        let end = map_offset(range.end, &self.markdown_line_starts, &self.source_line_starts)?;
+        (start <= end).then(|| self.span.from_inner(InnerSpan::new(start, end)))
     }
 }
 
@@ -914,6 +1023,8 @@ fn check_attrs(cx: &LateContext<'_>, valid_idents: &FxHashSet<String>, attrs: &[
         return Some(DocHeaders::default());
     }
 
+    let span_map = OnceCell::new();
+
     // Only emits the allow-by-default `DOC_LINK_CODE`; skip its extra markdown reparse when it's off.
     if !clippy_utils::is_lint_allowed(cx, DOC_LINK_CODE, cx.last_node_with_lint_attrs) {
         check_for_code_clusters(
@@ -928,6 +1039,7 @@ fn check_attrs(cx: &LateContext<'_>, valid_idents: &FxHashSet<String>, attrs: &[
             Fragments {
                 doc: &doc,
                 fragments: &fragments,
+                span_map: &span_map,
             },
         );
     }
@@ -940,6 +1052,7 @@ fn check_attrs(cx: &LateContext<'_>, valid_idents: &FxHashSet<String>, attrs: &[
             Fragments {
                 doc: &doc,
                 fragments: &fragments,
+                span_map: &span_map,
             },
         );
     }
@@ -964,6 +1077,7 @@ fn check_attrs(cx: &LateContext<'_>, valid_idents: &FxHashSet<String>, attrs: &[
         Fragments {
             doc: &doc,
             fragments: &fragments,
+            span_map: &span_map,
         },
         attrs,
     ))
