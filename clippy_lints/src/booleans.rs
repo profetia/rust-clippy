@@ -500,12 +500,22 @@ fn simple_negate(b: Bool) -> Bool {
     }
 }
 
-#[derive(Default)]
 struct Stats {
     terminals: [usize; 32],
     negations: usize,
     ops: usize,
-    has_negation_or_constant: bool,
+    is_read_once_nnf: bool,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            terminals: [0; 32],
+            negations: 0,
+            ops: 0,
+            is_read_once_nnf: true,
+        }
+    }
 }
 
 fn terminal_stats(b: &Bool) -> Stats {
@@ -513,13 +523,19 @@ fn terminal_stats(b: &Bool) -> Stats {
         match b {
             True | False => {
                 stats.ops += 1;
-                stats.has_negation_or_constant = true;
+                stats.is_read_once_nnf = false;
             },
             Not(inner) => {
-                stats.has_negation_or_constant = true;
                 match **inner {
-                    And(_) | Or(_) => stats.ops += 1, // brackets are also operations
-                    _ => stats.negations += 1,
+                    Term(_) => stats.negations += 1,
+                    And(_) | Or(_) => {
+                        stats.ops += 1; // brackets are also operations
+                        stats.is_read_once_nnf = false;
+                    },
+                    _ => {
+                        stats.negations += 1;
+                        stats.is_read_once_nnf = false;
+                    },
                 }
                 recurse(inner, stats);
             },
@@ -529,7 +545,11 @@ fn terminal_stats(b: &Bool) -> Stats {
                     recurse(inner, stats);
                 }
             },
-            &Term(n) => stats.terminals[n as usize] += 1,
+            &Term(n) => {
+                let count = &mut stats.terminals[n as usize];
+                *count += 1;
+                stats.is_read_once_nnf &= *count == 1;
+            },
         }
     }
     use quine_mc_cluskey::Bool::{And, False, Not, Or, Term, True};
@@ -551,9 +571,12 @@ impl<'tcx> NonminimalBoolVisitor<'_, 'tcx> {
                 // See #825, #13206
                 return;
             }
-            // A positive read-once formula cannot be simplified: every terminal is
-            // essential and joining `n` terminals always requires `n - 1` operations.
-            if !stats.has_negation_or_constant && stats.terminals.iter().all(|&count| count <= 1) {
+            // A read-once formula in negation normal form cannot be simplified: every
+            // terminal is essential and joining `n` terminals always requires `n - 1`
+            // operations. Still check whether an outer negated method call can be
+            // expressed directly by its inverse method.
+            if stats.is_read_once_nnf {
+                check_simplify_not(self.cx, self.msrv, e);
                 return;
             }
             let mut simplified = expr.simplify();
