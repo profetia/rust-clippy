@@ -4,8 +4,8 @@ use clippy_utils::macros::{is_panic, root_macro_call_first_node};
 use clippy_utils::res::MaybeDef as _;
 use clippy_utils::ty::implements_trait_with_env;
 use clippy_utils::visitors::for_each_expr;
-use clippy_utils::{fulfill_or_allowed, is_doc_hidden, is_inside_always_const_context, method_chain_args, return_ty};
-use rustc_hir::{BodyId, FnSig, OwnerId, Safety};
+use clippy_utils::{fulfill_or_allowed, is_doc_hidden, is_inside_always_const_context, return_ty};
+use rustc_hir::{BodyId, ExprKind, FnSig, OwnerId, Safety};
 use rustc_lint::LateContext;
 use rustc_middle::ty;
 use rustc_span::{Span, sym};
@@ -100,30 +100,41 @@ fn find_panic(cx: &LateContext<'_>, body_id: BodyId) -> Option<Span> {
     let mut panic_span = None;
     let typeck = cx.tcx.typeck_body(body_id);
     for_each_expr(cx.tcx, cx.tcx.hir_body(body_id), |expr| {
-        if is_inside_always_const_context(cx.tcx, expr.hir_id) {
-            return ControlFlow::<!>::Continue(());
-        }
-
-        if let Some(macro_call) = root_macro_call_first_node(cx, expr)
-            && (is_panic(cx, macro_call.def_id)
+        let macro_call = root_macro_call_first_node(cx, expr).filter(|macro_call| {
+            is_panic(cx, macro_call.def_id)
                 || matches!(
                     cx.tcx.get_diagnostic_name(macro_call.def_id),
                     Some(sym::assert_macro | sym::assert_eq_macro | sym::assert_ne_macro)
-                ))
+                )
+        });
+
+        // Check for `unwrap` and `expect` for both `Option` and `Result`.
+        let panicking_method = match expr.kind {
+            ExprKind::MethodCall(path, receiver, args, _)
+                if matches!(path.ident.name, sym::unwrap | sym::expect)
+                    && !receiver.span.from_expansion()
+                    && args.iter().all(|arg| !arg.span.from_expansion()) =>
+            {
+                matches!(
+                    typeck.expr_ty(receiver).peel_refs().opt_diag_name(cx),
+                    Some(sym::Option | sym::Result)
+                )
+            },
+            _ => false,
+        };
+
+        if macro_call.is_none() && !panicking_method || is_inside_always_const_context(cx.tcx, expr.hir_id) {
+            return ControlFlow::<!>::Continue(());
+        }
+
+        if let Some(macro_call) = macro_call
             && !fulfill_or_allowed(cx, MISSING_PANICS_DOC, [expr.hir_id])
             && panic_span.is_none()
         {
             panic_span = Some(macro_call.span);
         }
 
-        // check for `unwrap` and `expect` for both `Option` and `Result`
-        if let Some(arglists) =
-            method_chain_args(expr, &[sym::unwrap]).or_else(|| method_chain_args(expr, &[sym::expect]))
-            && let receiver_ty = typeck.expr_ty(arglists[0].0).peel_refs()
-            && matches!(receiver_ty.opt_diag_name(cx), Some(sym::Option | sym::Result))
-            && !fulfill_or_allowed(cx, MISSING_PANICS_DOC, [expr.hir_id])
-            && panic_span.is_none()
-        {
+        if panicking_method && !fulfill_or_allowed(cx, MISSING_PANICS_DOC, [expr.hir_id]) && panic_span.is_none() {
             panic_span = Some(expr.span);
         }
 
