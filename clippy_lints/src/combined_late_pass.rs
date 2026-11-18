@@ -64,10 +64,22 @@ macro_rules! combined_late_lint_pass {
             _marker: std::marker::PhantomData<&'tcx ()>,
         }
 
+        /// Records which passes need to run without constructing the passes themselves.
+        #[allow(non_snake_case)]
+        pub struct ${concat($name, Active)} {
+            $($field: bool,)*
+        }
+
         impl<'tcx> $name<'tcx> {
-            pub fn new<F: Fn(&rustc_lint::LintVec) -> bool>($($pname: $pty,)* is_active: &F) -> Self {
+            pub fn active<F: Fn(&rustc_lint::LintVec) -> bool>(is_active: &F) -> ${concat($name, Active)} {
+                ${concat($name, Active)} {
+                    $($field: is_active(&<$fty>::lint_vec()),)*
+                }
+            }
+
+            pub fn new($($pname: $pty,)* active: &${concat($name, Active)}) -> Self {
                 Self {
-                    $($field: is_active(&<$fty>::lint_vec()).then(|| $ctor),)*
+                    $($field: active.$field.then(|| $ctor),)*
                     _marker: std::marker::PhantomData,
                 }
             }
