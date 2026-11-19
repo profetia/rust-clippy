@@ -477,6 +477,10 @@ pub fn register_lint_passes(store: &mut rustc_lint::LintStore, conf: &'static Co
     let mod_format_args_storage = format_args_storage.clone();
     let mod_active_passes = std::sync::OnceLock::new();
     store.register_late_lint_mod_pass(Box::new(move |tcx: TyCtxt<'_>| {
+        // Module passes run inside rustc's cached `lint_mod` query, but the configuration is read
+        // outside the query system. Reading the configuration's hash through a tracked query makes
+        // every module's cached lint results depend on it, so a configuration change re-lints them.
+        let _ = tcx.env_var_os(clippy_config::CONF_HASH_ENV_VAR.as_ref());
         // The set of skippable lints is crate-wide, so compute this mask once instead of
         // allocating and checking every pass's `LintVec` for every module.
         let active_passes = mod_active_passes.get_or_init(|| {
