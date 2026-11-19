@@ -905,13 +905,14 @@ rustc_lint::late_lint_methods!(
     ]]
 );
 
-/// Crate roots that `cargo clippy` plans to compile both with and without `--test`, joined like
-/// `PATH`. Set by `cargo clippy`; read by `clippy-driver`.
-pub const LIBRARY_ROOTS_ENV_VAR: &str = "CLIPPY_LIBRARY_ROOTS";
+/// Set by `cargo clippy` when it runs `cargo check --all-targets` without `--profile test`: cargo
+/// then compiles every library both plainly and as its unit-test build, with the same settings.
+/// Read by `clippy-driver`.
+pub const LINT_ONCE_ENV_VAR: &str = "CLIPPY_LINT_ONCE";
 
-/// Set by `clippy-driver` in a `--test` compilation of a root listed in [`LIBRARY_ROOTS_ENV_VAR`]:
-/// the code it shares with the compilation without `--test` is linted there, so the per-module
-/// pass lints only code that exists because of `--test`.
+/// Set by `clippy-driver` in a library's unit-test build when [`LINT_ONCE_ENV_VAR`] is set: the
+/// code it shares with the plain library build is linted there, so the per-module pass lints only
+/// code that exists because of `--test`.
 pub const TEST_CODE_ONLY_ENV_VAR: &str = "CLIPPY_TEST_CODE_ONLY";
 
 /// The per-module pass restricted to code that exists only because of `--test`

@@ -18,12 +18,12 @@ rustc_driver::override_c_allocator_in_binary!();
 use clippy_utils::sym;
 use declare_clippy_lint::LintListBuilder;
 use rustc_interface::interface;
-use rustc_session::config::{ErrorOutputType, Input};
+use rustc_session::config::ErrorOutputType;
 use rustc_session::{EarlyDiagCtxt, Session};
 use rustc_span::symbol::Symbol;
 
 use std::env;
-use std::fs::{self, read_to_string};
+use std::fs::read_to_string;
 use std::io::Write as _;
 use std::path::Path;
 use std::process::ExitCode;
@@ -112,18 +112,14 @@ fn track_files(sess: &Session) {
     }
 }
 
-/// Whether this is a `--test` compilation of a crate root that `cargo clippy` also compiles without
-/// `--test` in the same command.
-fn is_listed_library_test(sess: &Session) -> bool {
-    if sess.opts.test
-        && let Input::File(input) = &sess.io.input
-        && let Some(roots) = env::var_os(clippy_lints::LIBRARY_ROOTS_ENV_VAR)
-        && let Ok(input) = fs::canonicalize(input)
-    {
-        env::split_paths(&roots).any(|root| root == input)
-    } else {
-        false
-    }
+/// Whether this is a library's unit-test build in a command that also compiles the library without
+/// `--test`. Cargo sets `CARGO_TARGET_TMPDIR` only for integration tests and benchmarks, and
+/// `CARGO_BIN_NAME` only for executables.
+fn is_shared_library_test(sess: &Session) -> bool {
+    sess.opts.test
+        && env::var_os(clippy_lints::LINT_ONCE_ENV_VAR).is_some()
+        && env::var_os("CARGO_TARGET_TMPDIR").is_none()
+        && env::var_os("CARGO_BIN_NAME").is_none()
 }
 
 struct DefaultCallbacks;
@@ -165,13 +161,13 @@ impl rustc_driver::Callbacks for ClippyCallbacks {
                 env::var("CLIPPY_CONF_DIR").ok().map(|dir| Symbol::intern(&dir)),
             ));
 
-            // Whether a `--test` compilation lints all code depends on the list of library roots
+            // Whether a `--test` compilation lints all code depends on `CLIPPY_LINT_ONCE`
             if sess.opts.test {
                 sess.env_depinfo.borrow_mut().insert((
-                    Symbol::intern(clippy_lints::LIBRARY_ROOTS_ENV_VAR),
-                    env::var(clippy_lints::LIBRARY_ROOTS_ENV_VAR)
+                    Symbol::intern(clippy_lints::LINT_ONCE_ENV_VAR),
+                    env::var(clippy_lints::LINT_ONCE_ENV_VAR)
                         .ok()
-                        .map(|roots| Symbol::intern(&roots)),
+                        .map(|value| Symbol::intern(&value)),
                 ));
             }
         }));
@@ -194,7 +190,7 @@ impl rustc_driver::Callbacks for ClippyCallbacks {
                     clippy_config::CONF_HASH_ENV_VAR,
                     clippy_config::Conf::inputs_hash().to_string(),
                 );
-                if is_listed_library_test(sess) {
+                if is_shared_library_test(sess) {
                     env::set_var(clippy_lints::TEST_CODE_ONLY_ENV_VAR, "1");
                 } else {
                     env::remove_var(clippy_lints::TEST_CODE_ONLY_ENV_VAR);

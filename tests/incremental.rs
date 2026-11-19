@@ -3,10 +3,10 @@
 //! Each directory in `tests/incremental` is a scenario of numbered steps (`1`, `2`, ...), each a
 //! complete library crate (`lib.rs`, its modules and optionally `clippy.toml`). A step may also
 //! hold `driver-args` (extra `clippy-driver` arguments, one per line) and `driver-env`
-//! (`NAME=VALUE` lines); in both, `{src}` stands for the crate's source directory. The steps are
-//! checked in order with one incremental cache; after each step, the diagnostics must equal those
-//! of a fresh check of the same files. A scenario's steps must not all produce the same
-//! diagnostics, otherwise a stale result could not show up as a mismatch.
+//! (`NAME=VALUE` lines). The steps are checked in order with one incremental cache; after each
+//! step, the diagnostics must equal those of a fresh check of the same files. A scenario's steps
+//! must not all produce the same diagnostics, otherwise a stale result could not show up as a
+//! mismatch.
 
 #![warn(rust_2018_idioms, unused_lifetimes)]
 
@@ -48,7 +48,7 @@ fn check_scenario(scenario: &Path) -> Result<(), String> {
                 fs::copy(file.path(), src.join(file.file_name())).unwrap();
             }
         }
-        let options = DriverOptions::read(&step, &src);
+        let options = DriverOptions::read(&step);
         let incremental = check(tmp.path(), &options, true).map_err(|e| format!("{name}, step {step_name}: {e}"))?;
         let fresh = check(tmp.path(), &options, false).map_err(|e| format!("{name}, step {step_name}: {e}"))?;
         if incremental != fresh {
@@ -76,14 +76,13 @@ struct DriverOptions {
 }
 
 impl DriverOptions {
-    fn read(step: &Path, src: &Path) -> Self {
-        let src = fs::canonicalize(src).unwrap();
+    fn read(step: &Path) -> Self {
         let lines = |file: &str| -> Vec<String> {
             fs::read_to_string(step.join(file))
                 .unwrap_or_default()
                 .lines()
                 .filter(|line| !line.is_empty())
-                .map(|line| line.replace("{src}", src.to_str().unwrap()))
+                .map(ToString::to_string)
                 .collect()
         };
         Self {
@@ -108,7 +107,9 @@ fn check(dir: &Path, options: &DriverOptions, incremental: bool) -> Result<Vec<S
     cmd.current_dir(dir)
         .env("CLIPPY_CONF_DIR", dir.join("src"))
         .env_remove("CLIPPY_ARGS")
-        .env_remove("CLIPPY_LIBRARY_ROOTS")
+        .env_remove("CLIPPY_LINT_ONCE")
+        .env_remove("CARGO_TARGET_TMPDIR")
+        .env_remove("CARGO_BIN_NAME")
         .envs(options.env.iter().map(|(name, value)| (name, value)))
         .args(&options.args)
         .args([
