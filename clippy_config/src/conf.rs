@@ -11,6 +11,7 @@ use rustc_data_structures::fx::FxHashSet;
 use rustc_errors::Applicability;
 use rustc_session::Session;
 use rustc_span::{Pos as _, SourceFile, Symbol};
+use std::hash::{DefaultHasher, Hash as _, Hasher as _};
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use std::{env, fs, io};
@@ -931,14 +932,38 @@ fn load_conf_file(sess: &Session) -> Option<Arc<SourceFile>> {
     }
 }
 
+/// Environment variable through which the driver exposes [`Conf::inputs_hash`], so that
+/// incremental results that read the configuration can depend on it via `TyCtxt::env_var_os`.
+pub const CONF_HASH_ENV_VAR: &str = "CLIPPY_CONF_HASH";
+
+static INPUTS_HASH: OnceLock<u64> = OnceLock::new();
+
 impl Conf {
     pub fn load(sess: &Session) -> &'static Conf {
         static CONF: OnceLock<Conf> = OnceLock::new();
         CONF.get_or_init(|| Conf::load_inner(sess))
     }
 
+    /// A hash of what the configuration was loaded from: the config file's name and contents,
+    /// and `CARGO_PKG_RUST_VERSION`.
+    ///
+    /// # Panics
+    /// If called before [`Conf::load`].
+    pub fn inputs_hash() -> u64 {
+        *INPUTS_HASH.get().expect("`Conf::load` sets the inputs hash")
+    }
+
     fn load_inner(sess: &Session) -> Conf {
-        let mut conf = if let Some(src) = load_conf_file(sess) {
+        let file = load_conf_file(sess);
+        let mut hasher = DefaultHasher::new();
+        if let Some(src) = &file {
+            src.name.hash(&mut hasher);
+            src.src.hash(&mut hasher);
+        }
+        env::var_os("CARGO_PKG_RUST_VERSION").hash(&mut hasher);
+        let _ = INPUTS_HASH.set(hasher.finish());
+
+        let mut conf = if let Some(src) = file {
             let dcx = DiagCtxt::new(sess, src.start_pos.to_usize());
             let src = src.src.as_ref().unwrap();
 

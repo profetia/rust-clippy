@@ -163,6 +163,14 @@ impl rustc_driver::Callbacks for ClippyCallbacks {
             list_builder.register(lint_store);
 
             let conf = clippy_config::Conf::load(sess);
+            // SAFETY: lints are registered while the session is set up, before any query runs; the
+            // compiler reads the environment through `std::env`, which is synchronized with `set_var`.
+            unsafe {
+                env::set_var(
+                    clippy_config::CONF_HASH_ENV_VAR,
+                    clippy_config::Conf::inputs_hash().to_string(),
+                );
+            }
             clippy_lints::register_lint_passes(lint_store, conf);
 
             #[cfg(feature = "internal")]

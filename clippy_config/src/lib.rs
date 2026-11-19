@@ -23,5 +23,5 @@ mod conf;
 mod metadata;
 pub mod types;
 
-pub use conf::{Conf, sanitize_explanation};
+pub use conf::{CONF_HASH_ENV_VAR, Conf, sanitize_explanation};
 pub use metadata::ConfMetadata;
