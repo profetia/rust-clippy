@@ -397,6 +397,42 @@ LL |         let v = if let Some(v_some) = g() { v_some } else { return };
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider writing: `let Some(v) = g() else { return };`
 
 error: this could be rewritten as `let...else`
+  --> tests/ui/manual_let_else.rs:516:5
+   |
+LL | /     _ = match i {
+LL | |         Ok(i) => i,
+LL | |         Err(_) => unsafe {
+LL | |             core::hint::unreachable_unchecked();
+LL | |         },
+LL | |     };
+   | |_____^
+   |
+help: consider writing
+   |
+LL ~     let Ok(_) = i else { unsafe {
+LL +             core::hint::unreachable_unchecked();
+LL ~         } };;
+   |
+
+error: this could be rewritten as `let...else`
+  --> tests/ui/manual_let_else.rs:524:5
+   |
+LL | /     _ = match i {
+LL | |         Ok(i) => i,
+LL | |         Err(_) => 'useless_label: {
+LL | |             panic!();
+LL | |         },
+LL | |     };
+   | |_____^
+   |
+help: consider writing
+   |
+LL ~     let Ok(_) = i else { 'useless_label: {
+LL +             panic!();
+LL ~         } };;
+   |
+
+error: this could be rewritten as `let...else`
   --> tests/ui/manual_let_else.rs:430:9
    |
 LL | /         let signature = match value {
@@ -490,42 +526,6 @@ help: consider writing
 LL ~         let Some(value) = (if some_flag { None } else { Some(3) }) else {
 LL +             return;
 LL +         };
-   |
-
-error: this could be rewritten as `let...else`
-  --> tests/ui/manual_let_else.rs:516:5
-   |
-LL | /     _ = match i {
-LL | |         Ok(i) => i,
-LL | |         Err(_) => unsafe {
-LL | |             core::hint::unreachable_unchecked();
-LL | |         },
-LL | |     };
-   | |_____^
-   |
-help: consider writing
-   |
-LL ~     let Ok(_) = i else { unsafe {
-LL +             core::hint::unreachable_unchecked();
-LL ~         } };;
-   |
-
-error: this could be rewritten as `let...else`
-  --> tests/ui/manual_let_else.rs:524:5
-   |
-LL | /     _ = match i {
-LL | |         Ok(i) => i,
-LL | |         Err(_) => 'useless_label: {
-LL | |             panic!();
-LL | |         },
-LL | |     };
-   | |_____^
-   |
-help: consider writing
-   |
-LL ~     let Ok(_) = i else { 'useless_label: {
-LL +             panic!();
-LL ~         } };;
    |
 
 error: aborting due to 35 previous errors

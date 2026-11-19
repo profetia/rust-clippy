@@ -158,21 +158,6 @@ LL +     a = 0x99;
    |
 
 error: all if blocks contain the same code at the end
-  --> tests/ui/branches_sharing_code/shared_at_bottom.rs:273:9
-   |
-LL | /             let y = 1;
-LL | |
-LL | |         }
-   | |_________^
-   |
-   = warning: some moved values might need to be renamed to avoid wrong references
-help: consider moving these statements after the if
-   |
-LL ~         }
-LL +         let y = 1;
-   |
-
-error: all if blocks contain the same code at the end
   --> tests/ui/branches_sharing_code/shared_at_bottom.rs:289:5
    |
 LL | /         0
@@ -268,6 +253,21 @@ help: consider moving these statements before the if
 LL ~     const B: isize = 5;
 LL +     return B;
 LL +     if false {
+   |
+
+error: all if blocks contain the same code at the end
+  --> tests/ui/branches_sharing_code/shared_at_bottom.rs:273:9
+   |
+LL | /             let y = 1;
+LL | |
+LL | |         }
+   | |_________^
+   |
+   = warning: some moved values might need to be renamed to avoid wrong references
+help: consider moving these statements after the if
+   |
+LL ~         }
+LL +         let y = 1;
    |
 
 error: aborting due to 16 previous errors

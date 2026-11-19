@@ -100,30 +100,6 @@ LL ~ [^1]: <!-- description -->"#]
    |
 
 error: looks like a footnote ref, but has no matching footnote
-  --> tests/ui/doc_suspicious_footnotes.rs:111:30
-   |
-LL |      * This is not a footnote[^1].
-   |                              ^^^^
-   |
-help: add footnote definition
-   |
-LL ~      */
-LL + /*! [^1]: <!-- description --> */
-   |
-
-error: looks like a footnote ref, but has no matching footnote
-  --> tests/ui/doc_suspicious_footnotes.rs:122:30
-   |
-LL |      * This is not a footnote[^1].
-   |                              ^^^^
-   |
-help: add footnote definition
-   |
-LL ~      */
-LL + /** [^1]: <!-- description --> */
-   |
-
-error: looks like a footnote ref, but has no matching footnote
   --> tests/ui/doc_suspicious_footnotes.rs:135:28
    |
 LL | /// This is not a footnote [^1]
@@ -173,6 +149,30 @@ help: add footnote definition
 LL ~ #[doc = r#"This is not a footnote [^7]
 LL + 
 LL ~ [^7]: <!-- description -->"#]
+   |
+
+error: looks like a footnote ref, but has no matching footnote
+  --> tests/ui/doc_suspicious_footnotes.rs:111:30
+   |
+LL |      * This is not a footnote[^1].
+   |                              ^^^^
+   |
+help: add footnote definition
+   |
+LL ~      */
+LL + /*! [^1]: <!-- description --> */
+   |
+
+error: looks like a footnote ref, but has no matching footnote
+  --> tests/ui/doc_suspicious_footnotes.rs:122:30
+   |
+LL |      * This is not a footnote[^1].
+   |                              ^^^^
+   |
+help: add footnote definition
+   |
+LL ~      */
+LL + /** [^1]: <!-- description --> */
    |
 
 error: aborting due to 12 previous errors

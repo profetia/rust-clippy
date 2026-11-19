@@ -732,6 +732,10 @@ impl_lint_pass!(Documentation => [
 pub struct Documentation {
     valid_idents: &'static FxHashSet<String>,
     check_private_items: bool,
+    /// Whether `check_mod` has run in this lint run. The pass runs once per module, and rustc
+    /// passes a module's attributes both to that module's run (before its `check_mod`) and to the
+    /// parent module's run (as the attributes of the `mod` item); only the former is linted.
+    in_module: bool,
 }
 
 impl Documentation {
@@ -739,6 +743,7 @@ impl Documentation {
         Self {
             valid_idents: &conf.doc_valid_idents,
             check_private_items: conf.check_private_items,
+            in_module: false,
         }
     }
 }
@@ -750,7 +755,17 @@ impl EarlyLintPass for Documentation {
 }
 
 impl<'tcx> LateLintPass<'tcx> for Documentation {
+    fn check_mod(&mut self, _: &LateContext<'tcx>, _: &'tcx rustc_hir::Mod<'tcx>, _: rustc_hir::def_id::LocalModId) {
+        self.in_module = true;
+    }
+
     fn check_attributes(&mut self, cx: &LateContext<'tcx>, attrs: &'tcx [Attribute]) {
+        if self.in_module
+            && let Node::Item(item) = cx.tcx.hir_node(cx.last_node_with_lint_attrs)
+            && matches!(item.kind, ItemKind::Mod(..))
+        {
+            return;
+        }
         let Some(headers) = check_attrs(cx, self.valid_idents, attrs) else {
             return;
         };

@@ -7,12 +7,6 @@ LL | pub unsafe fn destroy_the_planet() {
    = note: `-D clippy::missing-safety-doc` implied by `-D warnings`
    = help: to override `-D warnings` add `#[allow(clippy::missing_safety_doc)]`
 
-error: unsafe function's docs are missing a `# Safety` section
-  --> tests/ui/doc_unsafe.rs:35:5
-   |
-LL |     pub unsafe fn republished() {
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 error: docs for unsafe field missing `# Safety` section
   --> tests/ui/doc_unsafe.rs:46:5
    |
@@ -88,6 +82,12 @@ LL |         pub unsafe fn whee() {
 ...
 LL | very_unsafe!();
    | -------------- in this macro invocation
+
+error: unsafe function's docs are missing a `# Safety` section
+  --> tests/ui/doc_unsafe.rs:35:5
+   |
+LL |     pub unsafe fn republished() {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: unsafe function's docs are missing a `# Safety` section
   --> tests/ui/doc_unsafe.rs:199:13

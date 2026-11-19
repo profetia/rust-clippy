@@ -38,12 +38,6 @@ LL |     /// U+0001
    |               ^ help: end the paragraph with some punctuation: `.`
 
 error: doc paragraphs should end with a terminal punctuation mark
-  --> tests/ui/doc/doc_paragraphs_missing_punctuation.rs:72:29
-   |
-LL |     //! inner attributes too
-   |                             ^ help: end the paragraph with some punctuation: `.`
-
-error: doc paragraphs should end with a terminal punctuation mark
   --> tests/ui/doc/doc_paragraphs_missing_punctuation.rs:83:47
    |
 LL |     /// **But sometimes it is missing a period**
@@ -102,6 +96,12 @@ error: doc paragraphs should end with a terminal punctuation mark
    |
 LL |  * Block doc comments work
    |                           ^ help: end the paragraph with some punctuation: `.`
+
+error: doc paragraphs should end with a terminal punctuation mark
+  --> tests/ui/doc/doc_paragraphs_missing_punctuation.rs:72:29
+   |
+LL |     //! inner attributes too
+   |                             ^ help: end the paragraph with some punctuation: `.`
 
 error: aborting due to 17 previous errors
 

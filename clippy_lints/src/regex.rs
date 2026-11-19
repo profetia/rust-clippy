@@ -11,6 +11,7 @@ use rustc_ast::ast::{LitKind, StrStyle};
 use rustc_hir::def_id::DefIdMap;
 use rustc_hir::{BorrowKind, Expr, ExprKind, OwnerId};
 use rustc_lint::{LateContext, LateLintPass, impl_lint_pass};
+use rustc_middle::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
 
 declare_clippy_lint! {
@@ -115,17 +116,17 @@ enum RegexKind {
     BytesSet,
 }
 
-#[derive(Default)]
 pub struct Regex {
     definitions: DefIdMap<RegexKind>,
     loop_stack: Vec<(OwnerId, Span)>,
 }
 
-impl<'tcx> LateLintPass<'tcx> for Regex {
-    fn check_crate(&mut self, cx: &LateContext<'tcx>) {
+impl Regex {
+    pub fn new(tcx: TyCtxt<'_>) -> Self {
+        let mut definitions = DefIdMap::default();
         let mut resolve = |path: &PathLookup, kind: RegexKind| {
-            for &id in path.get(cx) {
-                self.definitions.insert(id, kind);
+            for &id in path.get(&tcx) {
+                definitions.insert(id, kind);
             }
         };
 
@@ -135,8 +136,14 @@ impl<'tcx> LateLintPass<'tcx> for Regex {
         resolve(&paths::REGEX_BYTES_NEW, RegexKind::Bytes);
         resolve(&paths::REGEX_BYTES_BUILDER_NEW, RegexKind::Bytes);
         resolve(&paths::REGEX_BYTES_SET_NEW, RegexKind::BytesSet);
+        Self {
+            definitions,
+            loop_stack: Vec::new(),
+        }
     }
+}
 
+impl<'tcx> LateLintPass<'tcx> for Regex {
     fn check_expr(&mut self, cx: &LateContext<'tcx>, expr: &'tcx Expr<'_>) {
         if let ExprKind::Call(fun, [arg]) = expr.kind
             && let Some(def_id) = fun.res(cx).opt_def_id()

@@ -42,6 +42,16 @@ LL | |     }
    | |_____^ help: remove it
 
 error: non-canonical implementation of `clone` on a `Copy` type
+  --> tests/ui/non_canonical_clone_impl.rs:161:29
+   |
+LL |       fn clone(&self) -> Self {
+   |  _____________________________^
+LL | |
+LL | |         { *self }
+LL | |     }
+   | |_____^ help: change this to: `{ *self }`
+
+error: non-canonical implementation of `clone` on a `Copy` type
   --> tests/ui/non_canonical_clone_impl.rs:122:37
    |
 LL |               fn clone(&self) -> Self {
@@ -52,16 +62,6 @@ LL | |             }
    | |_____________^ help: change this to: `{ *self }`
    |
    = note: this error originates in the macro `__inline_mac_mod_issue12788` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: non-canonical implementation of `clone` on a `Copy` type
-  --> tests/ui/non_canonical_clone_impl.rs:161:29
-   |
-LL |       fn clone(&self) -> Self {
-   |  _____________________________^
-LL | |
-LL | |         { *self }
-LL | |     }
-   | |_____^ help: change this to: `{ *self }`
 
 error: non-canonical implementation of `clone` on a `Copy` type
   --> tests/ui/non_canonical_clone_impl.rs:188:33

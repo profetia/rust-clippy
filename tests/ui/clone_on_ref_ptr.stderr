@@ -32,18 +32,6 @@ LL |     let _: Arc<dyn SomeTrait> = x.clone();
    |                                 ^^^^^^^^^ help: try: `std::sync::Arc::<SomeImpl>::clone(&x)`
 
 error: using `.clone()` on a ref-counted pointer
-  --> tests/ui/clone_on_ref_ptr.rs:48:14
-   |
-LL |         Some(try_opt!(Some(rc)).clone())
-   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `std::rc::Rc::<u8>::clone(&try_opt!(Some(rc)))`
-
-error: using `.clone()` on a ref-counted pointer
-  --> tests/ui/clone_on_ref_ptr.rs:61:23
-   |
-LL |             let rec = rec.clone() as Weak<dyn Fn(u32) -> u32>;
-   |                       ^^^^^^^^^^^ help: try: `std::rc::Weak::</* generic */>::clone(rec)`
-
-error: using `.clone()` on a ref-counted pointer
   --> tests/ui/clone_on_ref_ptr.rs:80:5
    |
 LL |     rc.clone();
@@ -78,6 +66,18 @@ error: using `.clone()` on a ref-counted pointer
    |
 LL |         (&mut rc).clone();
    |         ^^^^^^^^^^^^^^^^^ help: try: `std::rc::Rc::<str>::clone(&mut rc)`
+
+error: using `.clone()` on a ref-counted pointer
+  --> tests/ui/clone_on_ref_ptr.rs:48:14
+   |
+LL |         Some(try_opt!(Some(rc)).clone())
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `std::rc::Rc::<u8>::clone(&try_opt!(Some(rc)))`
+
+error: using `.clone()` on a ref-counted pointer
+  --> tests/ui/clone_on_ref_ptr.rs:61:23
+   |
+LL |             let rec = rec.clone() as Weak<dyn Fn(u32) -> u32>;
+   |                       ^^^^^^^^^^^ help: try: `std::rc::Weak::</* generic */>::clone(rec)`
 
 error: aborting due to 13 previous errors
 

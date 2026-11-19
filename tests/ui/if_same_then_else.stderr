@@ -89,24 +89,6 @@ LL | |     }
    | |_____^
 
 error: this `if` has identical blocks
-  --> tests/ui/if_same_then_else.rs:224:14
-   |
-LL |           if x {
-   |  ______________^
-LL | |             0_u8.is_power_of_two()
-LL | |         } else {
-   | |_________^
-   |
-note: same as this
-  --> tests/ui/if_same_then_else.rs:226:16
-   |
-LL |           } else {
-   |  ________________^
-LL | |             0_u8.is_power_of_two()
-LL | |         }
-   | |_________^
-
-error: this `if` has identical blocks
   --> tests/ui/if_same_then_else.rs:253:14
    |
 LL |     _ = if x { a == b } else { b == a };
@@ -309,6 +291,24 @@ note: same as this
    |
 LL |     _ = if x { a >= b } else { b <= a };
    |                              ^^^^^^^^^^
+
+error: this `if` has identical blocks
+  --> tests/ui/if_same_then_else.rs:224:14
+   |
+LL |           if x {
+   |  ______________^
+LL | |             0_u8.is_power_of_two()
+LL | |         } else {
+   | |_________^
+   |
+note: same as this
+  --> tests/ui/if_same_then_else.rs:226:16
+   |
+LL |           } else {
+   |  ________________^
+LL | |             0_u8.is_power_of_two()
+LL | |         }
+   | |_________^
 
 error: aborting due to 23 previous errors
 

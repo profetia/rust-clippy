@@ -50,38 +50,6 @@ LL |     a.expect_err("Hello error!");
    |
    = note: if this value is an `Ok`, it will panic
 
-error: used `unwrap()` on a `Result` value
-  --> tests/ui/unwrap_expect_used.rs:79:17
-   |
-LL |         let _ = open!(file).unwrap();
-   |                 ^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is an `Err`, it will panic
-
-error: used `expect()` on a `Result` value
-  --> tests/ui/unwrap_expect_used.rs:80:17
-   |
-LL |         let _ = open!(file).expect("can open");
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is an `Err`, it will panic
-
-error: used `unwrap_err()` on a `Result` value
-  --> tests/ui/unwrap_expect_used.rs:81:17
-   |
-LL |         let _ = open!(file).unwrap_err();
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is an `Ok`, it will panic
-
-error: used `expect_err()` on a `Result` value
-  --> tests/ui/unwrap_expect_used.rs:82:17
-   |
-LL |         let _ = open!(file).expect_err("can open");
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is an `Ok`, it will panic
-
 error: used `unwrap()` on an `Option` value
   --> tests/ui/unwrap_expect_used.rs:88:5
    |
@@ -127,6 +95,38 @@ error: used `expect_err()` on a `Result` value
    |
 LL |     Result::expect_err(res, "error message");
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: if this value is an `Ok`, it will panic
+
+error: used `unwrap()` on a `Result` value
+  --> tests/ui/unwrap_expect_used.rs:79:17
+   |
+LL |         let _ = open!(file).unwrap();
+   |                 ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: if this value is an `Err`, it will panic
+
+error: used `expect()` on a `Result` value
+  --> tests/ui/unwrap_expect_used.rs:80:17
+   |
+LL |         let _ = open!(file).expect("can open");
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: if this value is an `Err`, it will panic
+
+error: used `unwrap_err()` on a `Result` value
+  --> tests/ui/unwrap_expect_used.rs:81:17
+   |
+LL |         let _ = open!(file).unwrap_err();
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: if this value is an `Ok`, it will panic
+
+error: used `expect_err()` on a `Result` value
+  --> tests/ui/unwrap_expect_used.rs:82:17
+   |
+LL |         let _ = open!(file).expect_err("can open");
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: if this value is an `Ok`, it will panic
 

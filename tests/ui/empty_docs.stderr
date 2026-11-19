@@ -1,12 +1,21 @@
 error: empty doc comment
+  --> tests/ui/empty_docs.rs:100:15
+   |
+LL |     #[doc = $("")]
+   |               ^^
+   |
+   = help: consider removing or filling it
+   = note: `-D clippy::empty-docs` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::empty_docs)]`
+   = note: this error originates in the macro `external` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: empty doc comment
   --> tests/ui/empty_docs.rs:11:5
    |
 LL |     //!
    |     ^^^
    |
    = help: consider removing or filling it
-   = note: `-D clippy::empty-docs` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(clippy::empty_docs)]`
 
 error: empty doc comment
   --> tests/ui/empty_docs.rs:20:5
@@ -43,6 +52,14 @@ LL | |     #[doc = ""]
    = help: consider removing or filling it
 
 error: empty doc comment
+  --> tests/ui/empty_docs.rs:79:9
+   |
+LL |         ///
+   |         ^^^
+   |
+   = help: consider removing or filling it
+
+error: empty doc comment
   --> tests/ui/empty_docs.rs:47:5
    |
 LL |     ///
@@ -65,23 +82,6 @@ LL |             ///
    |             ^^^
    |
    = help: consider removing or filling it
-
-error: empty doc comment
-  --> tests/ui/empty_docs.rs:79:9
-   |
-LL |         ///
-   |         ^^^
-   |
-   = help: consider removing or filling it
-
-error: empty doc comment
-  --> tests/ui/empty_docs.rs:100:15
-   |
-LL |     #[doc = $("")]
-   |               ^^
-   |
-   = help: consider removing or filling it
-   = note: this error originates in the macro `external` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: aborting due to 10 previous errors
 

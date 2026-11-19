@@ -12,6 +12,20 @@ LL -     println!("val='{}'", local_i32);
 LL +     println!("val='{local_i32}'");
    |
 
+error: literal with an empty format string
+  --> tests/ui-toml/allow_mixed_uninlined_format_args/uninlined_format_args.rs:11:35
+   |
+LL |     println!("Hello {} is {:.*}", "x", local_i32, local_f64);
+   |                                   ^^^
+   |
+   = note: `-D clippy::print-literal` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::print_literal)]`
+help: try
+   |
+LL -     println!("Hello {} is {:.*}", "x", local_i32, local_f64);
+LL +     println!("Hello x is {:.*}", local_i32, local_f64);
+   |
+
 error: variables can be used directly in the `format!` string
   --> tests/ui-toml/allow_mixed_uninlined_format_args/uninlined_format_args.rs:11:5
    |
@@ -58,20 +72,6 @@ help: change this to
    |
 LL -     println!("{}, {}", local_i32, local_opt.unwrap());
 LL +     println!("{local_i32}, {}", local_opt.unwrap());
-   |
-
-error: literal with an empty format string
-  --> tests/ui-toml/allow_mixed_uninlined_format_args/uninlined_format_args.rs:11:35
-   |
-LL |     println!("Hello {} is {:.*}", "x", local_i32, local_f64);
-   |                                   ^^^
-   |
-   = note: `-D clippy::print-literal` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(clippy::print_literal)]`
-help: try
-   |
-LL -     println!("Hello {} is {:.*}", "x", local_i32, local_f64);
-LL +     println!("Hello x is {:.*}", local_i32, local_f64);
    |
 
 error: aborting due to 6 previous errors

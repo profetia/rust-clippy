@@ -1,11 +1,3 @@
-error: equal expressions as operands to `/`
-  --> tests/ui/cast.rs:479:6
-   |
-LL |     (y / y * y * -2) as u16;
-   |      ^^^^^
-   |
-   = note: `#[deny(clippy::eq_op)]` on by default
-
 error: casting `i32` to `f32` may cause a loss of precision (`i32` is 32 bits wide, but `f32`'s mantissa is only 23 bits wide)
   --> tests/ui/cast.rs:23:5
    |
@@ -576,6 +568,14 @@ error: casting `i16` to `u16` may lose the sign of the value
    |
 LL |     (y / y * y * -2) as u16;
    |     ^^^^^^^^^^^^^^^^^^^^^^^ help: if this is intentional, use `cast_unsigned()` instead: `(y / y * y * -2).cast_unsigned()`
+
+error: equal expressions as operands to `/`
+  --> tests/ui/cast.rs:479:6
+   |
+LL |     (y / y * y * -2) as u16;
+   |      ^^^^^
+   |
+   = note: `#[deny(clippy::eq_op)]` on by default
 
 error: casting `i16` to `u16` may lose the sign of the value
   --> tests/ui/cast.rs:483:5

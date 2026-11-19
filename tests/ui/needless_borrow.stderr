@@ -122,18 +122,6 @@ LL |     let x: (&str,) = (&"",);
    |                       ^^^ help: change this to: `""`
 
 error: this expression borrows a value the compiler would automatically borrow
-  --> tests/ui/needless_borrow.rs:195:13
-   |
-LL |             (&self.f)()
-   |             ^^^^^^^^^ help: change this to: `(self.f)`
-
-error: this expression borrows a value the compiler would automatically borrow
-  --> tests/ui/needless_borrow.rs:205:13
-   |
-LL |             (&mut self.f)()
-   |             ^^^^^^^^^^^^^ help: change this to: `(self.f)`
-
-error: this expression borrows a value the compiler would automatically borrow
   --> tests/ui/needless_borrow.rs:243:22
    |
 LL |         let _ = &mut (&mut { x.u }).x;
@@ -168,6 +156,18 @@ error: this expression creates a reference which is immediately dereferenced by 
    |
 LL |     let _ = (&slice).len();
    |             ^^^^^^^^ help: change this to: `slice`
+
+error: this expression borrows a value the compiler would automatically borrow
+  --> tests/ui/needless_borrow.rs:195:13
+   |
+LL |             (&self.f)()
+   |             ^^^^^^^^^ help: change this to: `(self.f)`
+
+error: this expression borrows a value the compiler would automatically borrow
+  --> tests/ui/needless_borrow.rs:205:13
+   |
+LL |             (&mut self.f)()
+   |             ^^^^^^^^^^^^^ help: change this to: `(self.f)`
 
 error: aborting due to 28 previous errors
 

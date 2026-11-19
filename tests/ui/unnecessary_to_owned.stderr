@@ -1,3 +1,65 @@
+error: redundant clone
+  --> tests/ui/unnecessary_to_owned.rs:215:64
+   |
+LL |     require_c_str(&CString::from_vec_with_nul(vec![0]).unwrap().to_owned());
+   |                                                                ^^^^^^^^^^^ help: remove this
+   |
+note: this value is dropped without further use
+  --> tests/ui/unnecessary_to_owned.rs:215:20
+   |
+LL |     require_c_str(&CString::from_vec_with_nul(vec![0]).unwrap().to_owned());
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `-D clippy::redundant-clone` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::redundant_clone)]`
+
+error: redundant clone
+  --> tests/ui/unnecessary_to_owned.rs:217:40
+   |
+LL |     require_os_str(&OsString::from("x").to_os_string());
+   |                                        ^^^^^^^^^^^^^^^ help: remove this
+   |
+note: this value is dropped without further use
+  --> tests/ui/unnecessary_to_owned.rs:217:21
+   |
+LL |     require_os_str(&OsString::from("x").to_os_string());
+   |                     ^^^^^^^^^^^^^^^^^^^
+
+error: redundant clone
+  --> tests/ui/unnecessary_to_owned.rs:219:48
+   |
+LL |     require_path(&std::path::PathBuf::from("x").to_path_buf());
+   |                                                ^^^^^^^^^^^^^^ help: remove this
+   |
+note: this value is dropped without further use
+  --> tests/ui/unnecessary_to_owned.rs:219:19
+   |
+LL |     require_path(&std::path::PathBuf::from("x").to_path_buf());
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: redundant clone
+  --> tests/ui/unnecessary_to_owned.rs:221:35
+   |
+LL |     require_str(&String::from("x").to_string());
+   |                                   ^^^^^^^^^^^^ help: remove this
+   |
+note: this value is dropped without further use
+  --> tests/ui/unnecessary_to_owned.rs:221:18
+   |
+LL |     require_str(&String::from("x").to_string());
+   |                  ^^^^^^^^^^^^^^^^^
+
+error: redundant clone
+  --> tests/ui/unnecessary_to_owned.rs:223:39
+   |
+LL |     require_slice(&[String::from("x")].to_owned());
+   |                                       ^^^^^^^^^^^ help: remove this
+   |
+note: this value is dropped without further use
+  --> tests/ui/unnecessary_to_owned.rs:223:20
+   |
+LL |     require_slice(&[String::from("x")].to_owned());
+   |                    ^^^^^^^^^^^^^^^^^^^
+
 error: unnecessary use of `into_owned`
   --> tests/ui/unnecessary_to_owned.rs:63:36
    |
@@ -440,24 +502,6 @@ LL |
 LL ~         let path = match get_file_path(t) {
    |
 
-error: unnecessary use of `to_string`
-  --> tests/ui/unnecessary_to_owned.rs:354:24
-   |
-LL |         Box::new(build(y.to_string()))
-   |                        ^^^^^^^^^^^^^ help: use: `y`
-
-error: unnecessary use of `to_string`
-  --> tests/ui/unnecessary_to_owned.rs:460:12
-   |
-LL |         id("abc".to_string())
-   |            ^^^^^^^^^^^^^^^^^ help: use: `"abc"`
-
-error: unnecessary use of `to_vec`
-  --> tests/ui/unnecessary_to_owned.rs:599:37
-   |
-LL |         IntoFuture::into_future(foo([].to_vec(), &0));
-   |                                     ^^^^^^^^^^^ help: use: `[]`
-
 error: unnecessary use of `to_vec`
   --> tests/ui/unnecessary_to_owned.rs:610:18
    |
@@ -494,67 +538,23 @@ error: unnecessary use of `to_string`
 LL |     take(format!("ouch{dot}").to_string());
    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use: `&format!("ouch{dot}")`
 
-error: redundant clone
-  --> tests/ui/unnecessary_to_owned.rs:215:64
+error: unnecessary use of `to_string`
+  --> tests/ui/unnecessary_to_owned.rs:354:24
    |
-LL |     require_c_str(&CString::from_vec_with_nul(vec![0]).unwrap().to_owned());
-   |                                                                ^^^^^^^^^^^ help: remove this
-   |
-note: this value is dropped without further use
-  --> tests/ui/unnecessary_to_owned.rs:215:20
-   |
-LL |     require_c_str(&CString::from_vec_with_nul(vec![0]).unwrap().to_owned());
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   = note: `-D clippy::redundant-clone` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(clippy::redundant_clone)]`
+LL |         Box::new(build(y.to_string()))
+   |                        ^^^^^^^^^^^^^ help: use: `y`
 
-error: redundant clone
-  --> tests/ui/unnecessary_to_owned.rs:217:40
+error: unnecessary use of `to_string`
+  --> tests/ui/unnecessary_to_owned.rs:460:12
    |
-LL |     require_os_str(&OsString::from("x").to_os_string());
-   |                                        ^^^^^^^^^^^^^^^ help: remove this
-   |
-note: this value is dropped without further use
-  --> tests/ui/unnecessary_to_owned.rs:217:21
-   |
-LL |     require_os_str(&OsString::from("x").to_os_string());
-   |                     ^^^^^^^^^^^^^^^^^^^
+LL |         id("abc".to_string())
+   |            ^^^^^^^^^^^^^^^^^ help: use: `"abc"`
 
-error: redundant clone
-  --> tests/ui/unnecessary_to_owned.rs:219:48
+error: unnecessary use of `to_vec`
+  --> tests/ui/unnecessary_to_owned.rs:599:37
    |
-LL |     require_path(&std::path::PathBuf::from("x").to_path_buf());
-   |                                                ^^^^^^^^^^^^^^ help: remove this
-   |
-note: this value is dropped without further use
-  --> tests/ui/unnecessary_to_owned.rs:219:19
-   |
-LL |     require_path(&std::path::PathBuf::from("x").to_path_buf());
-   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: redundant clone
-  --> tests/ui/unnecessary_to_owned.rs:221:35
-   |
-LL |     require_str(&String::from("x").to_string());
-   |                                   ^^^^^^^^^^^^ help: remove this
-   |
-note: this value is dropped without further use
-  --> tests/ui/unnecessary_to_owned.rs:221:18
-   |
-LL |     require_str(&String::from("x").to_string());
-   |                  ^^^^^^^^^^^^^^^^^
-
-error: redundant clone
-  --> tests/ui/unnecessary_to_owned.rs:223:39
-   |
-LL |     require_slice(&[String::from("x")].to_owned());
-   |                                       ^^^^^^^^^^^ help: remove this
-   |
-note: this value is dropped without further use
-  --> tests/ui/unnecessary_to_owned.rs:223:20
-   |
-LL |     require_slice(&[String::from("x")].to_owned());
-   |                    ^^^^^^^^^^^^^^^^^^^
+LL |         IntoFuture::into_future(foo([].to_vec(), &0));
+   |                                     ^^^^^^^^^^^ help: use: `[]`
 
 error: aborting due to 83 previous errors
 

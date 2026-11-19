@@ -198,14 +198,6 @@ note: recursive call site
 LL |         other != other
    |         ^^^^^^^^^^^^^^
 
-error: equal expressions as operands to `!=`
-  --> tests/ui/unconditional_recursion.rs:119:9
-   |
-LL |         other != other
-   |         ^^^^^^^^^^^^^^
-   |
-   = note: `#[deny(clippy::eq_op)]` on by default
-
 error: function cannot return without recursing
   --> tests/ui/unconditional_recursion.rs:122:5
    |
@@ -218,12 +210,6 @@ LL | |     }
    | |_____^
    |
 note: recursive call site
-  --> tests/ui/unconditional_recursion.rs:125:9
-   |
-LL |         other == other
-   |         ^^^^^^^^^^^^^^
-
-error: equal expressions as operands to `==`
   --> tests/ui/unconditional_recursion.rs:125:9
    |
 LL |         other == other
@@ -246,12 +232,6 @@ note: recursive call site
 LL |         self != self
    |         ^^^^^^^^^^^^
 
-error: equal expressions as operands to `!=`
-  --> tests/ui/unconditional_recursion.rs:136:9
-   |
-LL |         self != self
-   |         ^^^^^^^^^^^^
-
 error: function cannot return without recursing
   --> tests/ui/unconditional_recursion.rs:139:5
    |
@@ -264,12 +244,6 @@ LL | |     }
    | |_____^
    |
 note: recursive call site
-  --> tests/ui/unconditional_recursion.rs:142:9
-   |
-LL |         self == self
-   |         ^^^^^^^^^^^^
-
-error: equal expressions as operands to `==`
   --> tests/ui/unconditional_recursion.rs:142:9
    |
 LL |         self == self
@@ -380,6 +354,32 @@ note: recursive call site
    |
 LL |         Into::into(f)
    |         ^^^^^^^^^^^^^
+
+error: equal expressions as operands to `!=`
+  --> tests/ui/unconditional_recursion.rs:119:9
+   |
+LL |         other != other
+   |         ^^^^^^^^^^^^^^
+   |
+   = note: `#[deny(clippy::eq_op)]` on by default
+
+error: equal expressions as operands to `==`
+  --> tests/ui/unconditional_recursion.rs:125:9
+   |
+LL |         other == other
+   |         ^^^^^^^^^^^^^^
+
+error: equal expressions as operands to `!=`
+  --> tests/ui/unconditional_recursion.rs:136:9
+   |
+LL |         self != self
+   |         ^^^^^^^^^^^^
+
+error: equal expressions as operands to `==`
+  --> tests/ui/unconditional_recursion.rs:142:9
+   |
+LL |         self == self
+   |         ^^^^^^^^^^^^
 
 error: aborting due to 27 previous errors
 
