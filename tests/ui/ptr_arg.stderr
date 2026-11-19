@@ -167,6 +167,54 @@ error: using a reference to `Cow` is not recommended
 LL | fn test_cow_with_ref(c: &Cow<[i32]>) {}
    |                         ^^^^^^^^^^^ help: change this to: `&[i32]`
 
+error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
+  --> tests/ui/ptr_arg.rs:196:29
+   |
+LL | fn mut_vec_slice_methods(v: &mut Vec<u32>) {
+   |                             ^^^^^^^^^^^^^
+   |
+help: change this to
+   |
+LL - fn mut_vec_slice_methods(v: &mut Vec<u32>) {
+LL + fn mut_vec_slice_methods(v: &mut [u32]) {
+   |
+
+error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
+  --> tests/ui/ptr_arg.rs:260:17
+   |
+LL | fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
+   |                 ^^^^^^^^^^^^^
+   |
+help: change this to
+   |
+LL - fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
+LL + fn dyn_trait(a: &mut [u32], b: &mut String, c: &mut PathBuf) {
+   |
+
+error: writing `&mut String` instead of `&mut str` involves a new object where a slice will do
+  --> tests/ui/ptr_arg.rs:260:35
+   |
+LL | fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
+   |                                   ^^^^^^^^^^^
+   |
+help: change this to
+   |
+LL - fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
+LL + fn dyn_trait(a: &mut Vec<u32>, b: &mut str, c: &mut PathBuf) {
+   |
+
+error: writing `&mut PathBuf` instead of `&mut Path` involves a new object where a slice will do
+  --> tests/ui/ptr_arg.rs:260:51
+   |
+LL | fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
+   |                                                   ^^^^^^^^^^^^
+   |
+help: change this to
+   |
+LL - fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
+LL + fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut Path) {
+   |
+
 error: writing `&String` instead of `&str` involves a new object where a slice will do
   --> tests/ui/ptr_arg.rs:144:64
    |
@@ -224,54 +272,6 @@ LL ~         let e = str.to_owned().pop();
 LL ~         let f = str.to_owned().clone();
    |
 
-error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
-  --> tests/ui/ptr_arg.rs:196:29
-   |
-LL | fn mut_vec_slice_methods(v: &mut Vec<u32>) {
-   |                             ^^^^^^^^^^^^^
-   |
-help: change this to
-   |
-LL - fn mut_vec_slice_methods(v: &mut Vec<u32>) {
-LL + fn mut_vec_slice_methods(v: &mut [u32]) {
-   |
-
-error: writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do
-  --> tests/ui/ptr_arg.rs:260:17
-   |
-LL | fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
-   |                 ^^^^^^^^^^^^^
-   |
-help: change this to
-   |
-LL - fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
-LL + fn dyn_trait(a: &mut [u32], b: &mut String, c: &mut PathBuf) {
-   |
-
-error: writing `&mut String` instead of `&mut str` involves a new object where a slice will do
-  --> tests/ui/ptr_arg.rs:260:35
-   |
-LL | fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
-   |                                   ^^^^^^^^^^^
-   |
-help: change this to
-   |
-LL - fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
-LL + fn dyn_trait(a: &mut Vec<u32>, b: &mut str, c: &mut PathBuf) {
-   |
-
-error: writing `&mut PathBuf` instead of `&mut Path` involves a new object where a slice will do
-  --> tests/ui/ptr_arg.rs:260:51
-   |
-LL | fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
-   |                                                   ^^^^^^^^^^^^
-   |
-help: change this to
-   |
-LL - fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut PathBuf) {
-LL + fn dyn_trait(a: &mut Vec<u32>, b: &mut String, c: &mut Path) {
-   |
-
 error: using a reference to `Cow` is not recommended
   --> tests/ui/ptr_arg.rs:287:39
    |
@@ -289,6 +289,23 @@ error: using a reference to `Cow` is not recommended
    |
 LL |     fn cow_bad_ret_ty_2<'a, 'b>(input: &'a Cow<'a, str>) -> &'b str {
    |                                        ^^^^^^^^^^^^^^^^ help: change this to: `&str`
+
+error: eliding a lifetime that's named elsewhere is confusing
+  --> tests/ui/ptr_arg.rs:306:56
+   |
+LL |     fn cow_good_ret_ty<'a>(input: &'a Cow<'a, str>) -> &str {
+   |                                    --     --           ^^^^ the same lifetime is elided here
+   |                                    |      |
+   |                                    |      the lifetime is named here
+   |                                    the lifetime is named here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `-D mismatched-lifetime-syntaxes` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(mismatched_lifetime_syntaxes)]`
+help: consistently use `'a`
+   |
+LL |     fn cow_good_ret_ty<'a>(input: &'a Cow<'a, str>) -> &'a str {
+   |                                                         ++
 
 error: writing `&String` instead of `&str` involves a new object where a slice will do
   --> tests/ui/ptr_arg.rs:339:17
@@ -385,23 +402,6 @@ help: change this to
 LL -     fn barbar(_x: &mut Vec<u32>, y: &mut String) {
 LL +     fn barbar(_x: &mut Vec<u32>, y: &mut str) {
    |
-
-error: eliding a lifetime that's named elsewhere is confusing
-  --> tests/ui/ptr_arg.rs:306:56
-   |
-LL |     fn cow_good_ret_ty<'a>(input: &'a Cow<'a, str>) -> &str {
-   |                                    --     --           ^^^^ the same lifetime is elided here
-   |                                    |      |
-   |                                    |      the lifetime is named here
-   |                                    the lifetime is named here
-   |
-   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
-   = note: `-D mismatched-lifetime-syntaxes` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(mismatched_lifetime_syntaxes)]`
-help: consistently use `'a`
-   |
-LL |     fn cow_good_ret_ty<'a>(input: &'a Cow<'a, str>) -> &'a str {
-   |                                                         ++
 
 error: aborting due to 33 previous errors
 

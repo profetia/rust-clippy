@@ -114,6 +114,60 @@ LL | const fn generic_arr<T: Copy>(t: [T; 1]) -> T {
    | +++++
 
 error: this could be a `const fn`
+  --> tests/ui/missing_const_for_fn/could_be_const.rs:95:1
+   |
+LL | / fn msrv_1_46() -> i32 {
+LL | |
+LL | |     46
+LL | | }
+   | |_^
+   |
+help: make the function `const`
+   |
+LL | const fn msrv_1_46() -> i32 {
+   | +++++
+
+error: this could be a `const fn`
+  --> tests/ui/missing_const_for_fn/could_be_const.rs:115:1
+   |
+LL | fn d(this: D) {}
+   | ^^^^^^^^^^^^^^^^
+   |
+help: make the function `const`
+   |
+LL | const fn d(this: D) {}
+   | +++++
+
+error: this could be a `const fn`
+  --> tests/ui/missing_const_for_fn/could_be_const.rs:220:1
+   |
+LL | / fn mut_add(x: &mut i32) {
+LL | |
+LL | |     *x += 1;
+LL | | }
+   | |_^
+   |
+help: make the function `const`
+   |
+LL | const fn mut_add(x: &mut i32) {
+   | +++++
+
+error: this could be a `const fn`
+  --> tests/ui/missing_const_for_fn/could_be_const.rs:282:1
+   |
+LL | / pub fn issue17119(s: &str) -> bool {
+LL | |
+LL | |     let [_] = s.as_bytes() else { return false };
+LL | |     true
+LL | | }
+   | |_^
+   |
+help: make the function `const`
+   |
+LL | pub const fn issue17119(s: &str) -> bool {
+   |     +++++
+
+error: this could be a `const fn`
   --> tests/ui/missing_const_for_fn/could_be_const.rs:73:9
    |
 LL | /         pub fn b(self, a: &A) -> B {
@@ -140,31 +194,6 @@ help: make the function `const`
    |
 LL |     const fn const_fn_stabilized_before_msrv(byte: u8) {
    |     +++++
-
-error: this could be a `const fn`
-  --> tests/ui/missing_const_for_fn/could_be_const.rs:95:1
-   |
-LL | / fn msrv_1_46() -> i32 {
-LL | |
-LL | |     46
-LL | | }
-   | |_^
-   |
-help: make the function `const`
-   |
-LL | const fn msrv_1_46() -> i32 {
-   | +++++
-
-error: this could be a `const fn`
-  --> tests/ui/missing_const_for_fn/could_be_const.rs:115:1
-   |
-LL | fn d(this: D) {}
-   | ^^^^^^^^^^^^^^^^
-   |
-help: make the function `const`
-   |
-LL | const fn d(this: D) {}
-   | +++++
 
 error: this could be a `const fn`
   --> tests/ui/missing_const_for_fn/could_be_const.rs:123:9
@@ -319,20 +348,6 @@ LL |     const extern "system-unwind" fn system_unwind() {}
    |     +++++
 
 error: this could be a `const fn`
-  --> tests/ui/missing_const_for_fn/could_be_const.rs:220:1
-   |
-LL | / fn mut_add(x: &mut i32) {
-LL | |
-LL | |     *x += 1;
-LL | | }
-   | |_^
-   |
-help: make the function `const`
-   |
-LL | const fn mut_add(x: &mut i32) {
-   | +++++
-
-error: this could be a `const fn`
   --> tests/ui/missing_const_for_fn/could_be_const.rs:239:9
    |
 LL | /         pub fn new_1_61() -> Self {
@@ -401,21 +416,6 @@ help: make the function `const`
    |
 LL |         pub const fn new_1_61() -> Self {
    |             +++++
-
-error: this could be a `const fn`
-  --> tests/ui/missing_const_for_fn/could_be_const.rs:282:1
-   |
-LL | / pub fn issue17119(s: &str) -> bool {
-LL | |
-LL | |     let [_] = s.as_bytes() else { return false };
-LL | |     true
-LL | | }
-   | |_^
-   |
-help: make the function `const`
-   |
-LL | pub const fn issue17119(s: &str) -> bool {
-   |     +++++
 
 error: aborting due to 31 previous errors
 

@@ -239,22 +239,6 @@ LL ~         0 | 1 => cfg!(not_enable),
    |
 
 error: these match arms have identical bodies
-  --> tests/ui/match_same_arms2.rs:283:17
-   |
-LL |                 MaybeStaticStr::Static(s) => s,
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-LL |
-LL |                 MaybeStaticStr::Borrowed(s) => s,
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = help: if this is unintentional make the arms return different values
-help: otherwise merge the patterns into a single arm
-   |
-LL ~
-LL ~                 MaybeStaticStr::Static(s) | MaybeStaticStr::Borrowed(s) => s,
-   |
-
-error: these match arms have identical bodies
   --> tests/ui/match_same_arms2.rs:301:9
    |
 LL |         1 => "b",
@@ -286,6 +270,22 @@ help: otherwise merge the patterns into a single arm
 LL ~         1 | 2 => "b",
 LL |
 LL ~         #[expect(clippy::match_same_arms)]
+   |
+
+error: these match arms have identical bodies
+  --> tests/ui/match_same_arms2.rs:283:17
+   |
+LL |                 MaybeStaticStr::Static(s) => s,
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+LL |
+LL |                 MaybeStaticStr::Borrowed(s) => s,
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: if this is unintentional make the arms return different values
+help: otherwise merge the patterns into a single arm
+   |
+LL ~
+LL ~                 MaybeStaticStr::Static(s) | MaybeStaticStr::Borrowed(s) => s,
    |
 
 error: aborting due to 16 previous errors

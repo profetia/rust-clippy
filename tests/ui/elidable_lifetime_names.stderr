@@ -84,80 +84,6 @@ LL - fn out_return_type_lts<'a>(e: &'a str) -> Cow<'a> {
 LL + fn out_return_type_lts(e: &str) -> Cow<'_> {
    |
 
-error: the following explicit lifetimes could be elided: 'a
-  --> tests/ui/elidable_lifetime_names.rs:104:10
-   |
-LL |     impl<'a> Foo for Baz<'a> {}
-   |          ^^              ^^
-   |
-help: elide the lifetimes
-   |
-LL -     impl<'a> Foo for Baz<'a> {}
-LL +     impl Foo for Baz<'_> {}
-   |
-
-error: the following explicit lifetimes could be elided: 'a
-  --> tests/ui/elidable_lifetime_names.rs:107:16
-   |
-LL |         fn baz<'a>(&'a self) -> impl Foo + 'a {
-   |                ^^   ^^                     ^^
-   |
-help: elide the lifetimes
-   |
-LL -         fn baz<'a>(&'a self) -> impl Foo + 'a {
-LL +         fn baz(&self) -> impl Foo + '_ {
-   |
-
-error: the following explicit lifetimes could be elided: 'py
-  --> tests/ui/elidable_lifetime_names.rs:140:14
-   |
-LL |     impl<'t, 'py> ContentString<'t> {
-   |              ^^^
-LL |         // `'py` can be elided because of `&self`
-LL |         fn map_content2(&self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, 'py> {
-   |                                                                                   ^^^
-   |
-help: elide the lifetimes
-   |
-LL ~     impl<'t> ContentString<'t> {
-LL |         // `'py` can be elided because of `&self`
-LL ~         fn map_content2(&self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, '_> {
-   |
-
-error: the following explicit lifetimes could be elided: 'py
-  --> tests/ui/elidable_lifetime_names.rs:151:14
-   |
-LL |     impl<'t, 'py> ContentString<'t> {
-   |              ^^^
-LL |         // `'py` can be elided because of `&'_ self`
-LL |         fn map_content3(&'_ self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, 'py> {
-   |                                                                                      ^^^
-   |
-help: elide the lifetimes
-   |
-LL ~     impl<'t> ContentString<'t> {
-LL |         // `'py` can be elided because of `&'_ self`
-LL ~         fn map_content3(&'_ self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, '_> {
-   |
-
-error: the following explicit lifetimes could be elided: 'py
-  --> tests/ui/elidable_lifetime_names.rs:172:14
-   |
-LL |     impl<'t, 'py> ContentString<'t> {
-   |              ^^^
-...
-LL |         ) -> Content<'t, 'py> {
-   |                          ^^^
-   |
-help: elide the lifetimes
-   |
-LL ~     impl<'t> ContentString<'t> {
-LL |         // `'py` can be elided because of `&Self`
-...
-LL |             o: &'t str,
-LL ~         ) -> Content<'t, '_> {
-   |
-
 error: the following explicit lifetimes could be elided: 'a, 's
   --> tests/ui/elidable_lifetime_names.rs:203:15
    |
@@ -300,6 +226,80 @@ help: elide the lifetimes
    |
 LL -     impl<'a, 'b, 'c> T for S3<'a, 'b, 'c> {}
 LL +     impl T for S3<'_, '_, '_> {}
+   |
+
+error: the following explicit lifetimes could be elided: 'a
+  --> tests/ui/elidable_lifetime_names.rs:104:10
+   |
+LL |     impl<'a> Foo for Baz<'a> {}
+   |          ^^              ^^
+   |
+help: elide the lifetimes
+   |
+LL -     impl<'a> Foo for Baz<'a> {}
+LL +     impl Foo for Baz<'_> {}
+   |
+
+error: the following explicit lifetimes could be elided: 'a
+  --> tests/ui/elidable_lifetime_names.rs:107:16
+   |
+LL |         fn baz<'a>(&'a self) -> impl Foo + 'a {
+   |                ^^   ^^                     ^^
+   |
+help: elide the lifetimes
+   |
+LL -         fn baz<'a>(&'a self) -> impl Foo + 'a {
+LL +         fn baz(&self) -> impl Foo + '_ {
+   |
+
+error: the following explicit lifetimes could be elided: 'py
+  --> tests/ui/elidable_lifetime_names.rs:140:14
+   |
+LL |     impl<'t, 'py> ContentString<'t> {
+   |              ^^^
+LL |         // `'py` can be elided because of `&self`
+LL |         fn map_content2(&self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, 'py> {
+   |                                                                                   ^^^
+   |
+help: elide the lifetimes
+   |
+LL ~     impl<'t> ContentString<'t> {
+LL |         // `'py` can be elided because of `&self`
+LL ~         fn map_content2(&self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, '_> {
+   |
+
+error: the following explicit lifetimes could be elided: 'py
+  --> tests/ui/elidable_lifetime_names.rs:151:14
+   |
+LL |     impl<'t, 'py> ContentString<'t> {
+   |              ^^^
+LL |         // `'py` can be elided because of `&'_ self`
+LL |         fn map_content3(&'_ self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, 'py> {
+   |                                                                                      ^^^
+   |
+help: elide the lifetimes
+   |
+LL ~     impl<'t> ContentString<'t> {
+LL |         // `'py` can be elided because of `&'_ self`
+LL ~         fn map_content3(&'_ self, f: impl FnOnce(&'t str) -> &'t str) -> Content<'t, '_> {
+   |
+
+error: the following explicit lifetimes could be elided: 'py
+  --> tests/ui/elidable_lifetime_names.rs:172:14
+   |
+LL |     impl<'t, 'py> ContentString<'t> {
+   |              ^^^
+...
+LL |         ) -> Content<'t, 'py> {
+   |                          ^^^
+   |
+help: elide the lifetimes
+   |
+LL ~     impl<'t> ContentString<'t> {
+LL |         // `'py` can be elided because of `&Self`
+...
+LL |             o: &'t str,
+LL ~         ) -> Content<'t, '_> {
    |
 
 error: aborting due to 24 previous errors

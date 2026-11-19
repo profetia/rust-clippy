@@ -155,23 +155,6 @@ LL -     self::a::u128::MAX;
 LL +     u128::MAX;
    |
 
-error: usage of a legacy numeric constant
-  --> tests/ui/legacy_numeric_constants.rs:18:25
-   |
-LL | macro_rules! b {
-...
-LL |                 let x = std::u64::MAX;
-   |                         ^^^^^^^^^^^^^
-...
-LL |     b!();
-   |     ---- in this macro invocation
-   |
-help: use the associated constant instead
-   |
-LL -                 let x = std::u64::MAX;
-LL +                 let x = u64::MAX;
-   |
-
 error: usage of a legacy numeric method
   --> tests/ui/legacy_numeric_constants.rs:66:5
    |
@@ -278,6 +261,23 @@ help: use the associated constant instead
    |
 LL -     std::u32::MAX;
 LL +     u32::MAX;
+   |
+
+error: usage of a legacy numeric constant
+  --> tests/ui/legacy_numeric_constants.rs:18:25
+   |
+LL | macro_rules! b {
+...
+LL |                 let x = std::u64::MAX;
+   |                         ^^^^^^^^^^^^^
+...
+LL |     b!();
+   |     ---- in this macro invocation
+   |
+help: use the associated constant instead
+   |
+LL -                 let x = std::u64::MAX;
+LL +                 let x = u64::MAX;
    |
 
 error: aborting due to 23 previous errors

@@ -86,26 +86,6 @@ LL +     }
    |
 
 error: this loop could be written as a `while let` loop
-  --> tests/ui/while_let_loop.rs:180:9
-   |
-LL | /         loop {
-LL | |
-LL | |             let lt = match (ix.peek(), iy.peek()) {
-LL | |                 (Some(x), Some(y)) => x < y,
-...  |
-LL | |             res.push(if lt { &mut ix } else { &mut iy }.next().unwrap());
-LL | |         }
-   | |_________^
-   |
-help: try
-   |
-LL ~         while let (Some(x), Some(y)) = (ix.peek(), iy.peek()) {
-LL +             let lt = x < y;
-LL +             ..
-LL +         }
-   |
-
-error: this loop could be written as a `while let` loop
   --> tests/ui/while_let_loop.rs:195:5
    |
 LL | /     loop {
@@ -226,6 +206,26 @@ LL | |         let Some(x) = it.next() else { break 'outer };
 LL | |         println!("{x}");
 LL | |     }
    | |_____^ help: try: `'outer: while let Some(x) = it.next() { .. }`
+
+error: this loop could be written as a `while let` loop
+  --> tests/ui/while_let_loop.rs:180:9
+   |
+LL | /         loop {
+LL | |
+LL | |             let lt = match (ix.peek(), iy.peek()) {
+LL | |                 (Some(x), Some(y)) => x < y,
+...  |
+LL | |             res.push(if lt { &mut ix } else { &mut iy }.next().unwrap());
+LL | |         }
+   | |_________^
+   |
+help: try
+   |
+LL ~         while let (Some(x), Some(y)) = (ix.peek(), iy.peek()) {
+LL +             let lt = x < y;
+LL +             ..
+LL +         }
+   |
 
 error: aborting due to 15 previous errors; 1 warning emitted
 

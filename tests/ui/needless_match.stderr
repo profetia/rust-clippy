@@ -103,6 +103,28 @@ LL | |         x
 LL | |     };
    | |_____^ help: replace it with: `x`
 
+error: this if-let expression is unnecessary
+  --> tests/ui/needless_match.rs:350:9
+   |
+LL | /         if let Some(num) = A {
+LL | |
+LL | |             Some(num)
+LL | |         } else if let Some(num) = A {
+...  |
+LL | |             None
+LL | |         }
+   | |_________^ help: replace it with: `A`
+
+error: this match expression is unnecessary
+  --> tests/ui/needless_match.rs:371:13
+   |
+LL |       let x = match t {
+   |  _____________^
+LL | |         Ok(v) => Ok::<_, &'static str>(v),
+LL | |         err @ Err(_) => err,
+LL | |     };
+   | |_____^ help: replace it with: `t`
+
 error: this match expression is unnecessary
   --> tests/ui/needless_match.rs:176:26
    |
@@ -138,28 +160,6 @@ LL | |             _ if some_bool => e,
 LL | |             _ => e,
 LL | |         };
    | |_________^ help: replace it with: `e`
-
-error: this if-let expression is unnecessary
-  --> tests/ui/needless_match.rs:350:9
-   |
-LL | /         if let Some(num) = A {
-LL | |
-LL | |             Some(num)
-LL | |         } else if let Some(num) = A {
-...  |
-LL | |             None
-LL | |         }
-   | |_________^ help: replace it with: `A`
-
-error: this match expression is unnecessary
-  --> tests/ui/needless_match.rs:371:13
-   |
-LL |       let x = match t {
-   |  _____________^
-LL | |         Ok(v) => Ok::<_, &'static str>(v),
-LL | |         err @ Err(_) => err,
-LL | |     };
-   | |_____^ help: replace it with: `t`
 
 error: aborting due to 15 previous errors
 

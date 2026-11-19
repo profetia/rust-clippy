@@ -1,3 +1,13 @@
+error: methods called `new` usually take no `self`
+  --> tests/ui/issue_4266.rs:29:22
+   |
+LL |     pub async fn new(&mut self) -> Self {
+   |                      ^^^^^^^^^
+   |
+   = help: consider choosing a less ambiguous name
+   = note: `-D clippy::wrong-self-convention` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::wrong_self_convention)]`
+
 error: the following explicit lifetimes could be elided: 'a
   --> tests/ui/issue_4266.rs:1:16
    |
@@ -12,16 +22,6 @@ error: the following explicit lifetimes could be elided: 'a
    |
 LL | async fn one_to_one<'a>(s: &'a str) -> &'a str {
    |                     ^^      ^^          ^^
-
-error: methods called `new` usually take no `self`
-  --> tests/ui/issue_4266.rs:29:22
-   |
-LL |     pub async fn new(&mut self) -> Self {
-   |                      ^^^^^^^^^
-   |
-   = help: consider choosing a less ambiguous name
-   = note: `-D clippy::wrong-self-convention` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(clippy::wrong_self_convention)]`
 
 error: aborting due to 3 previous errors
 

@@ -176,6 +176,68 @@ LL |     println!("{}", unsafe { String::from_utf8_unchecked(vec![]) });
    = help: consider adding a safety comment on the preceding line
 
 error: unsafe impl missing a safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:585:5
+   |
+LL |     unsafe impl ImplInFn for () {}
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: consider adding a safety comment on the preceding line
+
+error: unsafe impl missing a safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:595:1
+   |
+LL | unsafe impl CrateRoot for () {}
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: consider adding a safety comment on the preceding line
+
+error: statement has unnecessary safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:610:5
+   |
+LL | /     let _ = {
+LL | |
+LL | |         if unsafe { true } {
+...  |
+LL | |     };
+   | |______^
+   |
+help: consider removing the safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:609:8
+   |
+LL |     // SAFETY: this is more than one level away, so it should warn
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `-D clippy::unnecessary-safety-comment` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::unnecessary_safety_comment)]`
+
+error: unsafe block missing a safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:612:12
+   |
+LL |         if unsafe { true } {
+   |            ^^^^^^^^^^^^^^^
+   |
+   = help: consider adding a safety comment on the preceding line
+
+error: unsafe block missing a safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:616:23
+   |
+LL |             let bar = unsafe {};
+   |                       ^^^^^^^^^
+   |
+   = help: consider adding a safety comment on the preceding line
+
+error: statement has unnecessary safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:788:5
+   |
+LL |     _ = bar();
+   |     ^^^^^^^^^^
+   |
+help: consider removing the safety comment
+  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:787:8
+   |
+LL |     // SAFETY: unnecessary_safety_comment triggers here
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unsafe impl missing a safety comment
   --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:440:5
    |
 LL |     unsafe impl A for () {}
@@ -281,62 +343,12 @@ help: consider removing the safety comment
    |
 LL |     // SAFETY:
    |        ^^^^^^^
-   = note: `-D clippy::unnecessary-safety-comment` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(clippy::unnecessary_safety_comment)]`
 
 error: unsafe impl missing a safety comment
   --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:577:5
    |
 LL |     unsafe impl Interference for () {}
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = help: consider adding a safety comment on the preceding line
-
-error: unsafe impl missing a safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:585:5
-   |
-LL |     unsafe impl ImplInFn for () {}
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = help: consider adding a safety comment on the preceding line
-
-error: unsafe impl missing a safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:595:1
-   |
-LL | unsafe impl CrateRoot for () {}
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = help: consider adding a safety comment on the preceding line
-
-error: statement has unnecessary safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:610:5
-   |
-LL | /     let _ = {
-LL | |
-LL | |         if unsafe { true } {
-...  |
-LL | |     };
-   | |______^
-   |
-help: consider removing the safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:609:8
-   |
-LL |     // SAFETY: this is more than one level away, so it should warn
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: unsafe block missing a safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:612:12
-   |
-LL |         if unsafe { true } {
-   |            ^^^^^^^^^^^^^^^
-   |
-   = help: consider adding a safety comment on the preceding line
-
-error: unsafe block missing a safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:616:23
-   |
-LL |             let bar = unsafe {};
-   |                       ^^^^^^^^^
    |
    = help: consider adding a safety comment on the preceding line
 
@@ -383,18 +395,6 @@ help: consider removing the safety comment
    |
 LL |     // SAFETY: fail ONLY if `accept-comment-above-attribute = false`
    |        ^^^^^^^
-
-error: statement has unnecessary safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:788:5
-   |
-LL |     _ = bar();
-   |     ^^^^^^^^^^
-   |
-help: consider removing the safety comment
-  --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:787:8
-   |
-LL |     // SAFETY: unnecessary_safety_comment triggers here
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: module has unnecessary safety comment
   --> tests/ui-toml/undocumented_unsafe_blocks/undocumented_unsafe_blocks.rs:808:5

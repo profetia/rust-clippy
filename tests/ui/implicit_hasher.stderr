@@ -96,6 +96,17 @@ help: add a type parameter for `BuildHasher`
 LL | pub fn set<S: ::std::hash::BuildHasher>(set: &mut HashSet<i32, S>) {}
    |           +++++++++++++++++++++++++++++                      +++
 
+error: parameter of type `HashMap` should be generalized over different hashers
+  --> tests/ui/implicit_hasher.rs:108:35
+   |
+LL | pub async fn election_vote(_data: HashMap<i32, i32>) {}
+   |                                   ^^^^^^^^^^^^^^^^^
+   |
+help: add a type parameter for `BuildHasher`
+   |
+LL | pub async fn election_vote<S: ::std::hash::BuildHasher>(_data: HashMap<i32, i32, S>) {}
+   |                           +++++++++++++++++++++++++++++                        +++
+
 error: impl for `HashMap` should be generalized over different hashers
   --> tests/ui/implicit_hasher.rs:83:43
    |
@@ -110,17 +121,6 @@ LL |
 LL |             fn make() -> (Self, Self) {
 LL ~                 (HashMap::default(), HashMap::with_capacity_and_hasher(10, Default::default()))
    |
-
-error: parameter of type `HashMap` should be generalized over different hashers
-  --> tests/ui/implicit_hasher.rs:108:35
-   |
-LL | pub async fn election_vote(_data: HashMap<i32, i32>) {}
-   |                                   ^^^^^^^^^^^^^^^^^
-   |
-help: add a type parameter for `BuildHasher`
-   |
-LL | pub async fn election_vote<S: ::std::hash::BuildHasher>(_data: HashMap<i32, i32, S>) {}
-   |                           +++++++++++++++++++++++++++++                        +++
 
 error: impl for `HashMap` should be generalized over different hashers
   --> tests/ui/implicit_hasher.rs:122:40

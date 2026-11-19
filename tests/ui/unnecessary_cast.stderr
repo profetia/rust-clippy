@@ -115,6 +115,54 @@ error: casting to the same type is unnecessary (`u32` -> `u32`)
 LL |     x as u32;
    |     ^^^^^^^^ help: try: `x`
 
+error: casting raw pointers to the same type and constness is unnecessary (`*const *const u8` -> `*const *const u8`)
+  --> tests/ui/unnecessary_cast.rs:654:10
+   |
+LL |         *(&NONE as *const _ as *const _ as *const *const u8 as *const *const u8)
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `(&NONE as *const _ as *const _ as *const *const u8)`
+
+error: casting integer literal to `u64` is unnecessary
+  --> tests/ui/unnecessary_cast.rs:662:45
+   |
+LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!0 as u64).overflowing_shr(1_u32).0);
+   |                                             ^^^^^^^^^^^ help: try: `(!0_u64)`
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+  --> tests/ui/unnecessary_cast.rs:664:45
+   |
+LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!0_u64 as u64).overflowing_shr(1_u32).0);
+   |                                             ^^^^^^^^^^^^^^^ help: try: `(!0_u64)`
+
+error: casting integer literal to `u64` is unnecessary
+  --> tests/ui/unnecessary_cast.rs:667:46
+   |
+LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!0 as u64 + 0).overflowing_shr(1_u32).0);
+   |                                              ^^^^^^^^^ help: try: `!0_u64`
+
+error: casting integer literal to `u64` is unnecessary
+  --> tests/ui/unnecessary_cast.rs:669:48
+   |
+LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!(0 as u64 + 0)).overflowing_shr(1_u32).0);
+   |                                                ^^^^^^^^ help: try: `0_u64`
+
+error: casting integer literal to `u64` is unnecessary
+  --> tests/ui/unnecessary_cast.rs:672:54
+   |
+LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == identity(!0 as u64).overflowing_shr(1_u32).0);
+   |                                                      ^^^^^^^^^ help: try: `!0_u64`
+
+error: casting integer literal to `u64` is unnecessary
+  --> tests/ui/unnecessary_cast.rs:675:56
+   |
+LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!identity(0 as u64)).overflowing_shr(1_u32).0);
+   |                                                        ^^^^^^^^ help: try: `0_u64`
+
+error: casting integer literal to `u64` is unnecessary
+  --> tests/ui/unnecessary_cast.rs:677:54
+   |
+LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == identity(!0 as u64 + 0).overflowing_shr(1_u32).0);
+   |                                                      ^^^^^^^^^ help: try: `!0_u64`
+
 error: casting integer literal to `f32` is unnecessary
   --> tests/ui/unnecessary_cast.rs:173:9
    |
@@ -384,54 +432,6 @@ error: casting to the same type is unnecessary (`f64` -> `f64`)
    |
 LL |         let _ = (1.0_f64.pow_like_single_impl(2) as f64 + one).abs();
    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `1.0_f64.pow_like_single_impl(2)`
-
-error: casting raw pointers to the same type and constness is unnecessary (`*const *const u8` -> `*const *const u8`)
-  --> tests/ui/unnecessary_cast.rs:654:10
-   |
-LL |         *(&NONE as *const _ as *const _ as *const *const u8 as *const *const u8)
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `(&NONE as *const _ as *const _ as *const *const u8)`
-
-error: casting integer literal to `u64` is unnecessary
-  --> tests/ui/unnecessary_cast.rs:662:45
-   |
-LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!0 as u64).overflowing_shr(1_u32).0);
-   |                                             ^^^^^^^^^^^ help: try: `(!0_u64)`
-
-error: casting to the same type is unnecessary (`u64` -> `u64`)
-  --> tests/ui/unnecessary_cast.rs:664:45
-   |
-LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!0_u64 as u64).overflowing_shr(1_u32).0);
-   |                                             ^^^^^^^^^^^^^^^ help: try: `(!0_u64)`
-
-error: casting integer literal to `u64` is unnecessary
-  --> tests/ui/unnecessary_cast.rs:667:46
-   |
-LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!0 as u64 + 0).overflowing_shr(1_u32).0);
-   |                                              ^^^^^^^^^ help: try: `!0_u64`
-
-error: casting integer literal to `u64` is unnecessary
-  --> tests/ui/unnecessary_cast.rs:669:48
-   |
-LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!(0 as u64 + 0)).overflowing_shr(1_u32).0);
-   |                                                ^^^^^^^^ help: try: `0_u64`
-
-error: casting integer literal to `u64` is unnecessary
-  --> tests/ui/unnecessary_cast.rs:672:54
-   |
-LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == identity(!0 as u64).overflowing_shr(1_u32).0);
-   |                                                      ^^^^^^^^^ help: try: `!0_u64`
-
-error: casting integer literal to `u64` is unnecessary
-  --> tests/ui/unnecessary_cast.rs:675:56
-   |
-LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == (!identity(0 as u64)).overflowing_shr(1_u32).0);
-   |                                                        ^^^^^^^^ help: try: `0_u64`
-
-error: casting integer literal to `u64` is unnecessary
-  --> tests/ui/unnecessary_cast.rs:677:54
-   |
-LL |     assert!(0x7f_ff_ff_ff_ff_ff_ff_ffu64 == identity(!0 as u64 + 0).overflowing_shr(1_u32).0);
-   |                                                      ^^^^^^^^^ help: try: `!0_u64`
 
 error: aborting due to 72 previous errors
 

@@ -32,14 +32,6 @@ LL |     T: ?Sized,
    |
    = help: consider combining the bounds: `T: Clone + ?Sized`
 
-error: type `T` has already been used as a bound predicate
-  --> tests/ui/type_repetition_in_bounds.rs:135:9
-   |
-LL |         T: Trait<Option<usize>, Box<[String]>, bool> + 'static,
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = help: consider combining the bounds: `T: ?Sized + Trait<Option<usize>, Box<[String]>, bool> + 'static`
-
 error: type `K` has already been used as a bound predicate
   --> tests/ui/type_repetition_in_bounds.rs:144:5
    |
@@ -55,6 +47,14 @@ LL |     Vec<T>: Clone,
    |     ^^^^^^^^^^^^^
    |
    = help: consider combining the bounds: `Vec<T>: Clone + Clone`
+
+error: type `T` has already been used as a bound predicate
+  --> tests/ui/type_repetition_in_bounds.rs:135:9
+   |
+LL |         T: Trait<Option<usize>, Box<[String]>, bool> + 'static,
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: consider combining the bounds: `T: ?Sized + Trait<Option<usize>, Box<[String]>, bool> + 'static`
 
 error: aborting due to 7 previous errors
 

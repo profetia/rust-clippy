@@ -250,23 +250,6 @@ LL |     if let Issue9647::A { a: Some(a), .. } = x {
 LL |         if let Some(u) = a {
    |                ^^^^^^^ with this pattern
 
-error: this `if let` can be collapsed into the outer `if let`
-  --> tests/ui/collapsible_match.rs:317:13
-   |
-LL | /             if let Some(Token::Name) = token {
-LL | |
-LL | |                 println!("token used as a ref");
-LL | |             }
-   | |_____________^
-   |
-help: the outer pattern can be modified to include the inner pattern
-  --> tests/ui/collapsible_match.rs:316:29
-   |
-LL |         if let Some(Error { ref token, .. }) = err {
-   |                             ^^^^^^^^^ replace this binding
-LL |             if let Some(Token::Name) = token {
-   |                    ^^^^^^^^^^^^^^^^^ with this pattern, prefixed by `token: `
-
 error: this `match` can be collapsed into the outer `if let`
   --> tests/ui/collapsible_match.rs:328:9
    |
@@ -335,6 +318,23 @@ LL |     if let Some(mut last) = arr.last_mut() {
 ...
 LL |             &mut &mut "a" | &mut &mut "b" => {
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ with this pattern
+
+error: this `if let` can be collapsed into the outer `if let`
+  --> tests/ui/collapsible_match.rs:317:13
+   |
+LL | /             if let Some(Token::Name) = token {
+LL | |
+LL | |                 println!("token used as a ref");
+LL | |             }
+   | |_____________^
+   |
+help: the outer pattern can be modified to include the inner pattern
+  --> tests/ui/collapsible_match.rs:316:29
+   |
+LL |         if let Some(Error { ref token, .. }) = err {
+   |                             ^^^^^^^^^ replace this binding
+LL |             if let Some(Token::Name) = token {
+   |                    ^^^^^^^^^^^^^^^^^ with this pattern, prefixed by `token: `
 
 error: aborting due to 17 previous errors
 

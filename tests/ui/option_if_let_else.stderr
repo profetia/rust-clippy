@@ -312,28 +312,6 @@ error: use Option::map_or instead of an if let/else
 LL |     let _ = if let Ok(a) = res { a + 1 } else { 5 };
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `res.map_or(5, |a| a + 1)`
 
-error: use Option::map_or instead of an if let/else
-  --> tests/ui/option_if_let_else.rs:294:17
-   |
-LL |           let _ = match initial {
-   |  _________________^
-LL | |
-LL | |             Some(value) => do_something(value),
-LL | |             None => 42,
-LL | |         };
-   | |_________^ help: try: `initial.as_ref().map_or(42, |value| do_something(value))`
-
-error: use Option::map_or instead of an if let/else
-  --> tests/ui/option_if_let_else.rs:302:17
-   |
-LL |           let _ = match initial {
-   |  _________________^
-LL | |
-LL | |             Some(value) => do_something2(value),
-LL | |             None => 42,
-LL | |         };
-   | |_________^ help: try: `initial.as_mut().map_or(42, |value| do_something2(value))`
-
 error: use Option::map_or_else instead of an if let/else
   --> tests/ui/option_if_let_else.rs:326:24
    |
@@ -368,6 +346,28 @@ LL | |         Ok(s) => s.clone(),
 LL | |         Err(_) => String::new(),
 LL | |     };
    | |_____^ help: try: `res.map_or_else(|_| String::new(), |s| s.clone())`
+
+error: use Option::map_or instead of an if let/else
+  --> tests/ui/option_if_let_else.rs:294:17
+   |
+LL |           let _ = match initial {
+   |  _________________^
+LL | |
+LL | |             Some(value) => do_something(value),
+LL | |             None => 42,
+LL | |         };
+   | |_________^ help: try: `initial.as_ref().map_or(42, |value| do_something(value))`
+
+error: use Option::map_or instead of an if let/else
+  --> tests/ui/option_if_let_else.rs:302:17
+   |
+LL |           let _ = match initial {
+   |  _________________^
+LL | |
+LL | |             Some(value) => do_something2(value),
+LL | |             None => 42,
+LL | |         };
+   | |_________^ help: try: `initial.as_mut().map_or(42, |value| do_something2(value))`
 
 error: aborting due to 29 previous errors
 

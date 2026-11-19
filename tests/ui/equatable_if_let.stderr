@@ -80,6 +80,18 @@ LL |     if let NoPartialEqStruct { a: 2, b: false } = h {}
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `matches!(h, NoPartialEqStruct { a: 2, b: false })`
 
 error: this pattern matching can be expressed using `matches!`
+  --> tests/ui/equatable_if_let.rs:210:23
+   |
+LL |     const _: u32 = if let NonConstEq::A = N { 0 } else { 1 };
+   |                       ^^^^^^^^^^^^^^^^^^^^^ help: try: `matches!(N, NonConstEq::A)`
+
+error: this pattern matching can be expressed using `matches!`
+  --> tests/ui/equatable_if_let.rs:212:23
+   |
+LL |     const _: u32 = if let Some(NonConstEq::A) = Some(N) { 0 } else { 1 };
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `matches!(Some(N), Some(NonConstEq::A))`
+
+error: this pattern matching can be expressed using `matches!`
   --> tests/ui/equatable_if_let.rs:93:12
    |
 LL |         if let Some('i') = cs.iter().next() {
@@ -96,18 +108,6 @@ error: this pattern matching can be expressed using `matches!`
    |
 LL |         if let Some(MyEnum::B) = get_enum() {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `matches!(get_enum(), Some(MyEnum::B))`
-
-error: this pattern matching can be expressed using `matches!`
-  --> tests/ui/equatable_if_let.rs:210:23
-   |
-LL |     const _: u32 = if let NonConstEq::A = N { 0 } else { 1 };
-   |                       ^^^^^^^^^^^^^^^^^^^^^ help: try: `matches!(N, NonConstEq::A)`
-
-error: this pattern matching can be expressed using `matches!`
-  --> tests/ui/equatable_if_let.rs:212:23
-   |
-LL |     const _: u32 = if let Some(NonConstEq::A) = Some(N) { 0 } else { 1 };
-   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `matches!(Some(N), Some(NonConstEq::A))`
 
 error: aborting due to 18 previous errors
 

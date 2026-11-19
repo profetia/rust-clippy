@@ -38,6 +38,27 @@ LL | use wildcard_imports_helper::*;
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `wildcard_imports_helper::{extern_foo, ExternA}`
 
 error: usage of wildcard import
+  --> tests/ui/wildcard_imports_2021.rs:187:9
+   |
+LL |     use crate::in_fn_test::*;
+   |         ^^^^^^^^^^^^^^^^^^^^ help: try: `crate::in_fn_test::{exported, ExportedStruct, ExportedEnum}`
+
+error: usage of wildcard import
+  --> tests/ui/wildcard_imports_2021.rs:197:9
+   |
+LL |     use crate:: in_fn_test::  * ;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^ help: try: `crate:: in_fn_test::exported`
+
+error: usage of wildcard import
+  --> tests/ui/wildcard_imports_2021.rs:199:9
+   |
+LL |       use crate:: fn_mod::
+   |  _________^
+LL | |
+LL | |         *;
+   | |_________^ help: try: `crate:: fn_mod::foo`
+
+error: usage of wildcard import
   --> tests/ui/wildcard_imports_2021.rs:95:13
    |
 LL |         use exports_underscore_ish::*;
@@ -78,27 +99,6 @@ error: usage of wildcard import
    |
 LL |         use wildcard_imports_helper::*;
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `wildcard_imports_helper::{extern_exported, ExternExportedStruct, ExternExportedEnum}`
-
-error: usage of wildcard import
-  --> tests/ui/wildcard_imports_2021.rs:187:9
-   |
-LL |     use crate::in_fn_test::*;
-   |         ^^^^^^^^^^^^^^^^^^^^ help: try: `crate::in_fn_test::{exported, ExportedStruct, ExportedEnum}`
-
-error: usage of wildcard import
-  --> tests/ui/wildcard_imports_2021.rs:197:9
-   |
-LL |     use crate:: in_fn_test::  * ;
-   |         ^^^^^^^^^^^^^^^^^^^^^^^ help: try: `crate:: in_fn_test::exported`
-
-error: usage of wildcard import
-  --> tests/ui/wildcard_imports_2021.rs:199:9
-   |
-LL |       use crate:: fn_mod::
-   |  _________^
-LL | |
-LL | |         *;
-   | |_________^ help: try: `crate:: fn_mod::foo`
 
 error: usage of wildcard import
   --> tests/ui/wildcard_imports_2021.rs:211:13

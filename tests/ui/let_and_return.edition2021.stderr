@@ -43,42 +43,6 @@ LL ~     stdin.lock().lines().next().unwrap().unwrap()
    |
 
 error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:177:13
-   |
-LL |             let clone = Arc::clone(&self.foo);
-   |             ---------------------------------- unnecessary `let` binding
-LL |             clone
-   |             ^^^^^
-   |
-help: return the expression directly
-   |
-LL ~             
-LL ~             (Arc::clone(&self.foo)) as _
-   |
-
-error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:196:13
-   |
-LL | /             let result = match self {
-LL | |                 E::A(x) => x,
-LL | |                 E::B(x) => x,
-LL | |             };
-   | |______________- unnecessary `let` binding
-LL |
-LL |               result
-   |               ^^^^^^
-   |
-help: return the expression directly
-   |
-LL ~             
-LL |
-LL ~             (match self {
-LL +                 E::A(x) => x,
-LL +                 E::B(x) => x,
-LL +             }) as _
-   |
-
-error: returning the result of a `let` binding from a block
   --> tests/ui/let_and_return.rs:222:9
    |
 LL |         let s = if true { "a".to_string() } else { "b".to_string() } + "c";
@@ -160,6 +124,42 @@ help: return the expression directly
    |
 LL ~     
 LL ~     plus_one!(x)
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:177:13
+   |
+LL |             let clone = Arc::clone(&self.foo);
+   |             ---------------------------------- unnecessary `let` binding
+LL |             clone
+   |             ^^^^^
+   |
+help: return the expression directly
+   |
+LL ~             
+LL ~             (Arc::clone(&self.foo)) as _
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:196:13
+   |
+LL | /             let result = match self {
+LL | |                 E::A(x) => x,
+LL | |                 E::B(x) => x,
+LL | |             };
+   | |______________- unnecessary `let` binding
+LL |
+LL |               result
+   |               ^^^^^^
+   |
+help: return the expression directly
+   |
+LL ~             
+LL |
+LL ~             (match self {
+LL +                 E::A(x) => x,
+LL +                 E::B(x) => x,
+LL +             }) as _
    |
 
 error: aborting due to 11 previous errors

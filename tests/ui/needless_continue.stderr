@@ -102,6 +102,30 @@ LL |         { continue }
    |
    = help: consider dropping the `continue` expression
 
+error: this `continue` expression is redundant
+  --> tests/ui/needless_continue.rs:180:13
+   |
+LL |             continue 'b;
+   |             ^^^^^^^^^^^
+   |
+   = help: consider dropping the `continue` expression
+
+error: this `else` block is redundant
+  --> tests/ui/needless_continue.rs:339:16
+   |
+LL |           } else {
+   |  ________________^
+LL | |
+LL | |             continue;
+LL | |         }
+   | |_________^
+   |
+   = help: consider dropping the `else` clause and merging the code that follows (in the loop) with the `if` block
+                   if todo!() {
+           // merged code follows:
+           
+                   }
+
 error: this `else` block is redundant
   --> tests/ui/needless_continue.rs:148:24
    |
@@ -150,14 +174,6 @@ LL | |                 }
                            {
                                println!("bar-5");
                            }
-
-error: this `continue` expression is redundant
-  --> tests/ui/needless_continue.rs:180:13
-   |
-LL |             continue 'b;
-   |             ^^^^^^^^^^^
-   |
-   = help: consider dropping the `continue` expression
 
 error: this `continue` expression is redundant
   --> tests/ui/needless_continue.rs:196:21
@@ -219,22 +235,6 @@ LL | |             }
                        {
                            do_something();
                        }
-
-error: this `else` block is redundant
-  --> tests/ui/needless_continue.rs:339:16
-   |
-LL |           } else {
-   |  ________________^
-LL | |
-LL | |             continue;
-LL | |         }
-   | |_________^
-   |
-   = help: consider dropping the `else` clause and merging the code that follows (in the loop) with the `if` block
-                   if todo!() {
-           // merged code follows:
-           
-                   }
 
 error: aborting due to 16 previous errors
 

@@ -157,6 +157,90 @@ LL +         1 => {},
    |
 
 error: redundant guard
+  --> tests/ui/redundant_guards.rs:252:26
+   |
+LL |         Some(Some(x)) if x.is_empty() => {},
+   |                          ^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         Some(Some(x)) if x.is_empty() => {},
+LL +         Some(Some("")) => {},
+   |
+
+error: redundant guard
+  --> tests/ui/redundant_guards.rs:264:26
+   |
+LL |         Some(Some(x)) if x.is_empty() => {},
+   |                          ^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         Some(Some(x)) if x.is_empty() => {},
+LL +         Some(Some([])) => {},
+   |
+
+error: redundant guard
+  --> tests/ui/redundant_guards.rs:270:26
+   |
+LL |         Some(Some(x)) if x.is_empty() => {},
+   |                          ^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         Some(Some(x)) if x.is_empty() => {},
+LL +         Some(Some([])) => {},
+   |
+
+error: redundant guard
+  --> tests/ui/redundant_guards.rs:282:26
+   |
+LL |         Some(Some(x)) if x.starts_with(&[]) => {},
+   |                          ^^^^^^^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         Some(Some(x)) if x.starts_with(&[]) => {},
+LL +         Some(Some([..])) => {},
+   |
+
+error: redundant guard
+  --> tests/ui/redundant_guards.rs:288:26
+   |
+LL |         Some(Some(x)) if x.starts_with(&[1]) => {},
+   |                          ^^^^^^^^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         Some(Some(x)) if x.starts_with(&[1]) => {},
+LL +         Some(Some([1, ..])) => {},
+   |
+
+error: redundant guard
+  --> tests/ui/redundant_guards.rs:294:26
+   |
+LL |         Some(Some(x)) if x.starts_with(&[1, 2]) => {},
+   |                          ^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         Some(Some(x)) if x.starts_with(&[1, 2]) => {},
+LL +         Some(Some([1, 2, ..])) => {},
+   |
+
+error: redundant guard
+  --> tests/ui/redundant_guards.rs:300:26
+   |
+LL |         Some(Some(x)) if x.ends_with(&[1, 2]) => {},
+   |                          ^^^^^^^^^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         Some(Some(x)) if x.ends_with(&[1, 2]) => {},
+LL +         Some(Some([.., 1, 2])) => {},
+   |
+
+error: redundant guard
   --> tests/ui/redundant_guards.rs:208:28
    |
 LL |             Some(ref x) if x == &1 => {},
@@ -250,90 +334,6 @@ help: try
    |
 LL -             B { ref c, .. } if matches!(c, &1) => {},
 LL +             B { c: 1, .. } => {},
-   |
-
-error: redundant guard
-  --> tests/ui/redundant_guards.rs:252:26
-   |
-LL |         Some(Some(x)) if x.is_empty() => {},
-   |                          ^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         Some(Some(x)) if x.is_empty() => {},
-LL +         Some(Some("")) => {},
-   |
-
-error: redundant guard
-  --> tests/ui/redundant_guards.rs:264:26
-   |
-LL |         Some(Some(x)) if x.is_empty() => {},
-   |                          ^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         Some(Some(x)) if x.is_empty() => {},
-LL +         Some(Some([])) => {},
-   |
-
-error: redundant guard
-  --> tests/ui/redundant_guards.rs:270:26
-   |
-LL |         Some(Some(x)) if x.is_empty() => {},
-   |                          ^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         Some(Some(x)) if x.is_empty() => {},
-LL +         Some(Some([])) => {},
-   |
-
-error: redundant guard
-  --> tests/ui/redundant_guards.rs:282:26
-   |
-LL |         Some(Some(x)) if x.starts_with(&[]) => {},
-   |                          ^^^^^^^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         Some(Some(x)) if x.starts_with(&[]) => {},
-LL +         Some(Some([..])) => {},
-   |
-
-error: redundant guard
-  --> tests/ui/redundant_guards.rs:288:26
-   |
-LL |         Some(Some(x)) if x.starts_with(&[1]) => {},
-   |                          ^^^^^^^^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         Some(Some(x)) if x.starts_with(&[1]) => {},
-LL +         Some(Some([1, ..])) => {},
-   |
-
-error: redundant guard
-  --> tests/ui/redundant_guards.rs:294:26
-   |
-LL |         Some(Some(x)) if x.starts_with(&[1, 2]) => {},
-   |                          ^^^^^^^^^^^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         Some(Some(x)) if x.starts_with(&[1, 2]) => {},
-LL +         Some(Some([1, 2, ..])) => {},
-   |
-
-error: redundant guard
-  --> tests/ui/redundant_guards.rs:300:26
-   |
-LL |         Some(Some(x)) if x.ends_with(&[1, 2]) => {},
-   |                          ^^^^^^^^^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         Some(Some(x)) if x.ends_with(&[1, 2]) => {},
-LL +         Some(Some([.., 1, 2])) => {},
    |
 
 error: redundant guard
