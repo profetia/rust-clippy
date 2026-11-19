@@ -575,7 +575,6 @@ rustc_lint::late_lint_methods!(
     [CombinedLateLintModPass, (conf: &'static Conf, format_args: FormatArgsStorage), [
         NonminimalBool: booleans::NonminimalBool = booleans::NonminimalBool::new(conf),
         Matches: matches::Matches = matches::Matches::new(conf),
-        Documentation: doc::Documentation = doc::Documentation::new(conf),
         NeedlessPassByValue: needless_pass_by_value::NeedlessPassByValue = needless_pass_by_value::NeedlessPassByValue,
         ComparisonChain: comparison_chain::ComparisonChain = comparison_chain::ComparisonChain,
         ZeroSizedMapValues: zero_sized_map_values::ZeroSizedMapValues = zero_sized_map_values::ZeroSizedMapValues,
@@ -850,6 +849,7 @@ rustc_lint::late_lint_methods!(
         UselessFormat: format::UselessFormat = format::UselessFormat::new(format_args.clone()),
         NewWithoutDefault: new_without_default::NewWithoutDefault = <new_without_default::NewWithoutDefault>::default(),
         Functions: functions::Functions = functions::Functions::new(tcx, conf),
+        Documentation: doc::Documentation = doc::Documentation::new(conf),
         MissingDoc: missing_doc::MissingDoc = missing_doc::MissingDoc::new(conf),
         PassByRefOrValue: pass_by_ref_or_value::PassByRefOrValue = pass_by_ref_or_value::PassByRefOrValue::new(tcx, conf),
         UselessConversion: useless_conversion::UselessConversion = <useless_conversion::UselessConversion>::default(),
