@@ -137,36 +137,6 @@ LL |     (|| async {})().await;
    |     ^^^^^^^^^^^^^^^ help: try doing something like: `async {}`
 
 error: try not to call a closure in the expression where it is declared
-  --> tests/ui/redundant_closure_call_fixable.rs:113:18
-   |
-LL |         spawn_on((|| async move {})());
-   |                  ^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async move {}`
-
-error: try not to call a closure in the expression where it is declared
-  --> tests/ui/redundant_closure_call_fixable.rs:119:18
-   |
-LL |         spawn_on((|| async move { drop(format!("hello, {name}")) })());
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async move { drop(format!("hello, {name}")) }`
-
-error: try not to call a closure in the expression where it is declared
-  --> tests/ui/redundant_closure_call_fixable.rs:125:18
-   |
-LL |         spawn_on((async move || drop(format!("hello, {name}")))());
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async move { drop(format!("hello, {name}")) }`
-
-error: try not to call a closure in the expression where it is declared
-  --> tests/ui/redundant_closure_call_fixable.rs:138:18
-   |
-LL |         spawn_on((|| async use { drop(format!("hello, {name:?}")) })());
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async use { drop(format!("hello, {name:?}")) }`
-
-error: try not to call a closure in the expression where it is declared
-  --> tests/ui/redundant_closure_call_fixable.rs:144:18
-   |
-LL |         spawn_on((async use || drop(format!("hello, {name}")))());
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async use { drop(format!("hello, {name}")) }`
-
-error: try not to call a closure in the expression where it is declared
   --> tests/ui/redundant_closure_call_fixable.rs:150:28
    |
 LL |     std::convert::identity((|| 13_i32 + 36_i32)()).leading_zeros();
@@ -195,6 +165,36 @@ error: try not to call a closure in the expression where it is declared
    |
 LL |     (|| { Some( 1 > 2 ) })() == Some(true);
    |     ^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `Some( 1 > 2 )`
+
+error: try not to call a closure in the expression where it is declared
+  --> tests/ui/redundant_closure_call_fixable.rs:113:18
+   |
+LL |         spawn_on((|| async move {})());
+   |                  ^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async move {}`
+
+error: try not to call a closure in the expression where it is declared
+  --> tests/ui/redundant_closure_call_fixable.rs:119:18
+   |
+LL |         spawn_on((|| async move { drop(format!("hello, {name}")) })());
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async move { drop(format!("hello, {name}")) }`
+
+error: try not to call a closure in the expression where it is declared
+  --> tests/ui/redundant_closure_call_fixable.rs:125:18
+   |
+LL |         spawn_on((async move || drop(format!("hello, {name}")))());
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async move { drop(format!("hello, {name}")) }`
+
+error: try not to call a closure in the expression where it is declared
+  --> tests/ui/redundant_closure_call_fixable.rs:138:18
+   |
+LL |         spawn_on((|| async use { drop(format!("hello, {name:?}")) })());
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async use { drop(format!("hello, {name:?}")) }`
+
+error: try not to call a closure in the expression where it is declared
+  --> tests/ui/redundant_closure_call_fixable.rs:144:18
+   |
+LL |         spawn_on((async use || drop(format!("hello, {name}")))());
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try doing something like: `async use { drop(format!("hello, {name}")) }`
 
 error: aborting due to 25 previous errors
 

@@ -88,64 +88,6 @@ LL |     if s == "1" { Some(true) } else { None }
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `(s == "1").then(|| true)`
 
 error: this could be simplified with `bool::then`
-  --> tests/ui/if_then_some_else_none.rs:155:9
-   |
-LL | /         if rs.len() == 1 && rs[0].start == rs[0].end {
-LL | |
-LL | |             Some(vec![rs[0].start])
-LL | |         } else {
-LL | |             None
-LL | |         }
-   | |_________^ help: try: `(rs.len() == 1 && rs[0].start == rs[0].end).then(|| vec![rs[0].start])`
-
-error: this could be simplified with `bool::then_some`
-  --> tests/ui/if_then_some_else_none.rs:165:9
-   |
-LL | /         if modulo == 0 {
-LL | |
-LL | |             Some(i)
-LL | |         } else {
-LL | |             None
-LL | |         }
-   | |_________^ help: try: `(modulo == 0).then_some(i)`
-
-error: this could be simplified with `bool::then_some`
-  --> tests/ui/if_then_some_else_none.rs:182:22
-   |
-LL |           do_something(if i % 2 == 0 {
-   |  ______________________^
-LL | |
-LL | |             Some(item_fn)
-LL | |         } else {
-LL | |             None
-LL | |         });
-   | |_________^ help: try: `(i % 2 == 0).then_some(item_fn)`
-
-error: this could be simplified with `bool::then_some`
-  --> tests/ui/if_then_some_else_none.rs:199:22
-   |
-LL |           do_something(if i % 2 == 0 {
-   |  ______________________^
-LL | |
-LL | |             Some(item_fn)
-LL | |         } else {
-LL | |             None
-LL | |         });
-   | |_________^ help: try: `(i % 2 == 0).then_some(item_fn)`
-
-error: this could be simplified with `bool::then_some`
-  --> tests/ui/if_then_some_else_none.rs:207:22
-   |
-LL |           do_something(if i % 2 == 0 {
-   |  ______________________^
-LL | |
-LL | |             Some(closure_fn)
-LL | |         } else {
-LL | |             None
-LL | |         });
-   | |_________^ help: try: `(i % 2 == 0).then_some(closure_fn)`
-
-error: this could be simplified with `bool::then`
   --> tests/ui/if_then_some_else_none.rs:232:13
    |
 LL | /             if self.count < 5 {
@@ -204,6 +146,64 @@ LL +         // SAFETY: `bytes` bytes starting at `new_end` were just reserved.
 LL +         unsafe { *a.get() }
 LL +     })
    |
+
+error: this could be simplified with `bool::then`
+  --> tests/ui/if_then_some_else_none.rs:155:9
+   |
+LL | /         if rs.len() == 1 && rs[0].start == rs[0].end {
+LL | |
+LL | |             Some(vec![rs[0].start])
+LL | |         } else {
+LL | |             None
+LL | |         }
+   | |_________^ help: try: `(rs.len() == 1 && rs[0].start == rs[0].end).then(|| vec![rs[0].start])`
+
+error: this could be simplified with `bool::then_some`
+  --> tests/ui/if_then_some_else_none.rs:165:9
+   |
+LL | /         if modulo == 0 {
+LL | |
+LL | |             Some(i)
+LL | |         } else {
+LL | |             None
+LL | |         }
+   | |_________^ help: try: `(modulo == 0).then_some(i)`
+
+error: this could be simplified with `bool::then_some`
+  --> tests/ui/if_then_some_else_none.rs:182:22
+   |
+LL |           do_something(if i % 2 == 0 {
+   |  ______________________^
+LL | |
+LL | |             Some(item_fn)
+LL | |         } else {
+LL | |             None
+LL | |         });
+   | |_________^ help: try: `(i % 2 == 0).then_some(item_fn)`
+
+error: this could be simplified with `bool::then_some`
+  --> tests/ui/if_then_some_else_none.rs:199:22
+   |
+LL |           do_something(if i % 2 == 0 {
+   |  ______________________^
+LL | |
+LL | |             Some(item_fn)
+LL | |         } else {
+LL | |             None
+LL | |         });
+   | |_________^ help: try: `(i % 2 == 0).then_some(item_fn)`
+
+error: this could be simplified with `bool::then_some`
+  --> tests/ui/if_then_some_else_none.rs:207:22
+   |
+LL |           do_something(if i % 2 == 0 {
+   |  ______________________^
+LL | |
+LL | |             Some(closure_fn)
+LL | |         } else {
+LL | |             None
+LL | |         });
+   | |_________^ help: try: `(i % 2 == 0).then_some(closure_fn)`
 
 error: aborting due to 14 previous errors
 

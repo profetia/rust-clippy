@@ -112,6 +112,17 @@ LL ~     };
    |
 
 error: manual implementation of `ok`
+  --> tests/ui/manual_ok_err.rs:188:13
+   |
+LL |       let _ = match test_expr!(42) {
+   |  _____________^
+LL | |
+LL | |         Ok(v) => Some(v),
+LL | |         Err(_) => None,
+LL | |     };
+   | |_____^ help: replace with: `test_expr!(42).ok()`
+
+error: manual implementation of `ok`
   --> tests/ui/manual_ok_err.rs:152:9
    |
 LL | /         match &x.field {
@@ -140,17 +151,6 @@ LL | |             Ok(panel) => Some(panel),
 LL | |             Err(_) => None,
 LL | |         }
    | |_________^ help: replace with: `result_with_ref_mut(x).as_mut().ok()`
-
-error: manual implementation of `ok`
-  --> tests/ui/manual_ok_err.rs:188:13
-   |
-LL |       let _ = match test_expr!(42) {
-   |  _____________^
-LL | |
-LL | |         Ok(v) => Some(v),
-LL | |         Err(_) => None,
-LL | |     };
-   | |_____^ help: replace with: `test_expr!(42).ok()`
 
 error: aborting due to 13 previous errors
 

@@ -1,3 +1,13 @@
+error: allocating a local array larger than 10 bytes
+  --> tests/ui-toml/array_size_threshold/array_size_threshold.rs:8:17
+   |
+LL |     let above = [0u8; 11];
+   |                 ^^^^^^^^^
+   |
+   = help: consider allocating on the heap with `vec![0u8; 11].into_boxed_slice()`
+   = note: `-D clippy::large-stack-arrays` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_stack_arrays)]`
+
 error: large array defined as const
   --> tests/ui-toml/array_size_threshold/array_size_threshold.rs:3:1
    |
@@ -8,16 +18,6 @@ LL | const ABOVE: [u8; 11] = [0; 11];
    |
    = note: `-D clippy::large-const-arrays` implied by `-D warnings`
    = help: to override `-D warnings` add `#[allow(clippy::large_const_arrays)]`
-
-error: allocating a local array larger than 10 bytes
-  --> tests/ui-toml/array_size_threshold/array_size_threshold.rs:8:17
-   |
-LL |     let above = [0u8; 11];
-   |                 ^^^^^^^^^
-   |
-   = help: consider allocating on the heap with `vec![0u8; 11].into_boxed_slice()`
-   = note: `-D clippy::large-stack-arrays` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(clippy::large_stack_arrays)]`
 
 error: aborting due to 2 previous errors
 

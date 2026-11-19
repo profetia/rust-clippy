@@ -180,17 +180,6 @@ LL | |     };
    | |_____^ help: replace with: `Ok::<i32, i32>(1).unwrap_or(42)`
 
 error: this pattern reimplements `Option::unwrap_or`
-  --> tests/ui/manual_unwrap_or.rs:275:17
-   |
-LL |           let _ = match some_macro!() {
-   |  _________________^
-LL | |
-LL | |             Some(val) => val,
-LL | |             None => 0,
-LL | |         };
-   | |_________^ help: replace with: `some_macro!().unwrap_or(0)`
-
-error: this pattern reimplements `Option::unwrap_or`
   --> tests/ui/manual_unwrap_or.rs:319:5
    |
 LL | /     if let Some(x) = Some(42) {
@@ -212,6 +201,17 @@ error: this pattern reimplements `Result::unwrap_or`
    |
 LL |     let _ = if let Ok(v) = copyable_res { v } else { 2 };
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with: `copyable_res.unwrap_or(2)`
+
+error: this pattern reimplements `Option::unwrap_or`
+  --> tests/ui/manual_unwrap_or.rs:275:17
+   |
+LL |           let _ = match some_macro!() {
+   |  _________________^
+LL | |
+LL | |             Some(val) => val,
+LL | |             None => 0,
+LL | |         };
+   | |_________^ help: replace with: `some_macro!().unwrap_or(0)`
 
 error: aborting due to 20 previous errors
 

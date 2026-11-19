@@ -173,48 +173,6 @@ LL |     let _ = f(&0, |x, y| f2(x, y));
    |                   ^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `f2`
 
 error: redundant closure
-  --> tests/ui/eta.rs:472:22
-   |
-LL |             test.map(|t| t.method())
-   |                      ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `Test::method`
-
-error: redundant closure
-  --> tests/ui/eta.rs:477:22
-   |
-LL |             test.map(|t| t.method())
-   |                      ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `super::Outer::method`
-
-error: redundant closure
-  --> tests/ui/eta.rs:491:18
-   |
-LL |         test.map(|t| t.method())
-   |                  ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `test_mod::Test::method`
-
-error: redundant closure
-  --> tests/ui/eta.rs:499:30
-   |
-LL |                     test.map(|t| t.method())
-   |                              ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `crate::issue_10854::d::Test::method`
-
-error: redundant closure
-  --> tests/ui/eta.rs:519:38
-   |
-LL |         let x = Box::new(|| None.map(|x| f(x)));
-   |                                      ^^^^^^^^ help: replace the closure with the function itself: `&f`
-
-error: redundant closure
-  --> tests/ui/eta.rs:524:38
-   |
-LL |         let x = Box::new(|| None.map(|x| f(x)));
-   |                                      ^^^^^^^^ help: replace the closure with the function itself: `f`
-
-error: redundant closure
-  --> tests/ui/eta.rs:542:35
-   |
-LL |         let _field = bind.or_else(|| get_default()).unwrap();
-   |                                   ^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `get_default`
-
-error: redundant closure
   --> tests/ui/eta.rs:589:16
    |
 LL |     accepts_fn(|| f());
@@ -267,6 +225,48 @@ error: redundant closure
    |
 LL |     (0..10).flat_map(|x| (0..10).map(|y| closure(y))).count();
    |                                      ^^^^^^^^^^^^^^ help: replace the closure with the function itself: `&*closure`
+
+error: redundant closure
+  --> tests/ui/eta.rs:491:18
+   |
+LL |         test.map(|t| t.method())
+   |                  ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `test_mod::Test::method`
+
+error: redundant closure
+  --> tests/ui/eta.rs:472:22
+   |
+LL |             test.map(|t| t.method())
+   |                      ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `Test::method`
+
+error: redundant closure
+  --> tests/ui/eta.rs:477:22
+   |
+LL |             test.map(|t| t.method())
+   |                      ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `super::Outer::method`
+
+error: redundant closure
+  --> tests/ui/eta.rs:499:30
+   |
+LL |                     test.map(|t| t.method())
+   |                              ^^^^^^^^^^^^^^ help: replace the closure with the method itself: `crate::issue_10854::d::Test::method`
+
+error: redundant closure
+  --> tests/ui/eta.rs:519:38
+   |
+LL |         let x = Box::new(|| None.map(|x| f(x)));
+   |                                      ^^^^^^^^ help: replace the closure with the function itself: `&f`
+
+error: redundant closure
+  --> tests/ui/eta.rs:524:38
+   |
+LL |         let x = Box::new(|| None.map(|x| f(x)));
+   |                                      ^^^^^^^^ help: replace the closure with the function itself: `f`
+
+error: redundant closure
+  --> tests/ui/eta.rs:542:35
+   |
+LL |         let _field = bind.or_else(|| get_default()).unwrap();
+   |                                   ^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `get_default`
 
 error: redundant closure
   --> tests/ui/eta.rs:681:37

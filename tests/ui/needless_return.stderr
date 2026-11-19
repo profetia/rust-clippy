@@ -233,55 +233,6 @@ LL +         String::new()
    |
 
 error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:150:32
-   |
-LL |         bar.unwrap_or_else(|_| return)
-   |                                ^^^^^^
-   |
-help: replace `return` with an empty block
-   |
-LL -         bar.unwrap_or_else(|_| return)
-LL +         bar.unwrap_or_else(|_| {})
-   |
-
-error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:156:13
-   |
-LL |             return;
-   |             ^^^^^^
-   |
-help: remove `return`
-   |
-LL -         let _ = || {
-LL -             return;
-LL +         let _ = || {
-   |
-
-error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:159:20
-   |
-LL |         let _ = || return;
-   |                    ^^^^^^
-   |
-help: replace `return` with an empty block
-   |
-LL -         let _ = || return;
-LL +         let _ = || {};
-   |
-
-error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:166:32
-   |
-LL |         res.unwrap_or_else(|_| return Foo)
-   |                                ^^^^^^^^^^
-   |
-help: remove `return`
-   |
-LL -         res.unwrap_or_else(|_| return Foo)
-LL +         res.unwrap_or_else(|_| Foo)
-   |
-
-error: unneeded `return` statement
   --> tests/ui/needless_return.rs:176:5
    |
 LL |     return true;
@@ -577,31 +528,6 @@ LL ~     }
    |
 
 error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:358:9
-   |
-LL |         return;
-   |         ^^^^^^
-   |
-help: remove `return`
-   |
-LL -         let _ = 42;
-LL -         return;
-LL +         let _ = 42;
-   |
-
-error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:364:21
-   |
-LL |         let _ = 42; return;
-   |                     ^^^^^^
-   |
-help: remove `return`
-   |
-LL -         let _ = 42; return;
-LL +         let _ = 42;
-   |
-
-error: unneeded `return` statement
   --> tests/ui/needless_return.rs:377:9
    |
 LL |         return Ok(format!("ok!"));
@@ -623,30 +549,6 @@ help: remove `return`
    |
 LL -         return Err(format!("err!"));
 LL +         Err(format!("err!"))
-   |
-
-error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:387:9
-   |
-LL |         return if true { 1 } else { 2 };
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-help: remove `return`
-   |
-LL -         return if true { 1 } else { 2 };
-LL +         if true { 1 } else { 2 }
-   |
-
-error: unneeded `return` statement
-  --> tests/ui/needless_return.rs:392:9
-   |
-LL |         return if b1 { 0 } else { 1 } | if b2 { 2 } else { 3 } | if b3 { 4 } else { 5 };
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-help: remove `return` and wrap the sequence with parentheses
-   |
-LL -         return if b1 { 0 } else { 1 } | if b2 { 2 } else { 3 } | if b3 { 4 } else { 5 };
-LL +         (if b1 { 0 } else { 1 } | if b2 { 2 } else { 3 } | if b3 { 4 } else { 5 })
    |
 
 error: unneeded `return` statement
@@ -683,6 +585,104 @@ help: remove `return` and wrap the sequence with parentheses
    |
 LL -     return unsafe { todo() } as *const i32;
 LL +     (unsafe { todo() } as *const i32)
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:150:32
+   |
+LL |         bar.unwrap_or_else(|_| return)
+   |                                ^^^^^^
+   |
+help: replace `return` with an empty block
+   |
+LL -         bar.unwrap_or_else(|_| return)
+LL +         bar.unwrap_or_else(|_| {})
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:156:13
+   |
+LL |             return;
+   |             ^^^^^^
+   |
+help: remove `return`
+   |
+LL -         let _ = || {
+LL -             return;
+LL +         let _ = || {
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:159:20
+   |
+LL |         let _ = || return;
+   |                    ^^^^^^
+   |
+help: replace `return` with an empty block
+   |
+LL -         let _ = || return;
+LL +         let _ = || {};
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:166:32
+   |
+LL |         res.unwrap_or_else(|_| return Foo)
+   |                                ^^^^^^^^^^
+   |
+help: remove `return`
+   |
+LL -         res.unwrap_or_else(|_| return Foo)
+LL +         res.unwrap_or_else(|_| Foo)
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:358:9
+   |
+LL |         return;
+   |         ^^^^^^
+   |
+help: remove `return`
+   |
+LL -         let _ = 42;
+LL -         return;
+LL +         let _ = 42;
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:364:21
+   |
+LL |         let _ = 42; return;
+   |                     ^^^^^^
+   |
+help: remove `return`
+   |
+LL -         let _ = 42; return;
+LL +         let _ = 42;
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:387:9
+   |
+LL |         return if true { 1 } else { 2 };
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: remove `return`
+   |
+LL -         return if true { 1 } else { 2 };
+LL +         if true { 1 } else { 2 }
+   |
+
+error: unneeded `return` statement
+  --> tests/ui/needless_return.rs:392:9
+   |
+LL |         return if b1 { 0 } else { 1 } | if b2 { 2 } else { 3 } | if b3 { 4 } else { 5 };
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: remove `return` and wrap the sequence with parentheses
+   |
+LL -         return if b1 { 0 } else { 1 } | if b2 { 2 } else { 3 } | if b3 { 4 } else { 5 };
+LL +         (if b1 { 0 } else { 1 } | if b2 { 2 } else { 3 } | if b3 { 4 } else { 5 })
    |
 
 error: unneeded `return` statement

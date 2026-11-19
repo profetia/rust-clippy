@@ -120,78 +120,6 @@ LL -     fn f() -> impl Deref + DerefMut<Target = u8> {
 LL +     fn f() -> impl DerefMut<Target = u8> {
    |
 
-error: this bound is already specified as the supertrait of `PartialOrd`
-  --> tests/ui/implied_bounds_in_impls.rs:83:41
-   |
-LL |     fn default_generic_param1() -> impl PartialEq + PartialOrd + Debug {}
-   |                                         ^^^^^^^^^
-   |
-help: try removing this bound
-   |
-LL -     fn default_generic_param1() -> impl PartialEq + PartialOrd + Debug {}
-LL +     fn default_generic_param1() -> impl PartialOrd + Debug {}
-   |
-
-error: this bound is already specified as the supertrait of `PartialOrd`
-  --> tests/ui/implied_bounds_in_impls.rs:85:54
-   |
-LL |     fn default_generic_param2() -> impl PartialOrd + PartialEq + Debug {}
-   |                                                      ^^^^^^^^^
-   |
-help: try removing this bound
-   |
-LL -     fn default_generic_param2() -> impl PartialOrd + PartialEq + Debug {}
-LL +     fn default_generic_param2() -> impl PartialOrd + Debug {}
-   |
-
-error: this bound is already specified as the supertrait of `DoubleEndedIterator`
-  --> tests/ui/implied_bounds_in_impls.rs:99:26
-   |
-LL |     fn my_iter() -> impl Iterator<Item = u32> + DoubleEndedIterator {
-   |                          ^^^^^^^^^^^^^^^^^^^^
-   |
-help: try removing this bound
-   |
-LL -     fn my_iter() -> impl Iterator<Item = u32> + DoubleEndedIterator {
-LL +     fn my_iter() -> impl DoubleEndedIterator<Item = u32> {
-   |
-
-error: this bound is already specified as the supertrait of `Copy`
-  --> tests/ui/implied_bounds_in_impls.rs:105:27
-   |
-LL |     fn f() -> impl Copy + Clone {
-   |                           ^^^^^
-   |
-help: try removing this bound
-   |
-LL -     fn f() -> impl Copy + Clone {
-LL +     fn f() -> impl Copy {
-   |
-
-error: this bound is already specified as the supertrait of `Trait2<i32>`
-  --> tests/ui/implied_bounds_in_impls.rs:120:21
-   |
-LL |     fn f2() -> impl Trait1<i32, U = i64> + Trait2<i32> {}
-   |                     ^^^^^^^^^^^^^^^^^^^^
-   |
-help: try removing this bound
-   |
-LL -     fn f2() -> impl Trait1<i32, U = i64> + Trait2<i32> {}
-LL +     fn f2() -> impl Trait2<i32, U = i64> {}
-   |
-
-error: this bound is already specified as the supertrait of `Trait4<i8, X = i32>`
-  --> tests/ui/implied_bounds_in_impls.rs:136:21
-   |
-LL |     fn f3() -> impl Trait3<i8, i16, i64, X = i32, Y = i128> + Trait4<i8, X = i32> {}
-   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-help: try removing this bound
-   |
-LL -     fn f3() -> impl Trait3<i8, i16, i64, X = i32, Y = i128> + Trait4<i8, X = i32> {}
-LL +     fn f3() -> impl Trait4<i8, X = i32, Y = i128> {}
-   |
-
 error: this bound is already specified as the supertrait of `Y`
   --> tests/ui/implied_bounds_in_impls.rs:164:21
    |
@@ -274,6 +202,78 @@ help: try removing this bound
    |
 LL - type Tait = impl Deref + DerefMut;
 LL + type Tait = impl DerefMut;
+   |
+
+error: this bound is already specified as the supertrait of `PartialOrd`
+  --> tests/ui/implied_bounds_in_impls.rs:83:41
+   |
+LL |     fn default_generic_param1() -> impl PartialEq + PartialOrd + Debug {}
+   |                                         ^^^^^^^^^
+   |
+help: try removing this bound
+   |
+LL -     fn default_generic_param1() -> impl PartialEq + PartialOrd + Debug {}
+LL +     fn default_generic_param1() -> impl PartialOrd + Debug {}
+   |
+
+error: this bound is already specified as the supertrait of `PartialOrd`
+  --> tests/ui/implied_bounds_in_impls.rs:85:54
+   |
+LL |     fn default_generic_param2() -> impl PartialOrd + PartialEq + Debug {}
+   |                                                      ^^^^^^^^^
+   |
+help: try removing this bound
+   |
+LL -     fn default_generic_param2() -> impl PartialOrd + PartialEq + Debug {}
+LL +     fn default_generic_param2() -> impl PartialOrd + Debug {}
+   |
+
+error: this bound is already specified as the supertrait of `DoubleEndedIterator`
+  --> tests/ui/implied_bounds_in_impls.rs:99:26
+   |
+LL |     fn my_iter() -> impl Iterator<Item = u32> + DoubleEndedIterator {
+   |                          ^^^^^^^^^^^^^^^^^^^^
+   |
+help: try removing this bound
+   |
+LL -     fn my_iter() -> impl Iterator<Item = u32> + DoubleEndedIterator {
+LL +     fn my_iter() -> impl DoubleEndedIterator<Item = u32> {
+   |
+
+error: this bound is already specified as the supertrait of `Copy`
+  --> tests/ui/implied_bounds_in_impls.rs:105:27
+   |
+LL |     fn f() -> impl Copy + Clone {
+   |                           ^^^^^
+   |
+help: try removing this bound
+   |
+LL -     fn f() -> impl Copy + Clone {
+LL +     fn f() -> impl Copy {
+   |
+
+error: this bound is already specified as the supertrait of `Trait2<i32>`
+  --> tests/ui/implied_bounds_in_impls.rs:120:21
+   |
+LL |     fn f2() -> impl Trait1<i32, U = i64> + Trait2<i32> {}
+   |                     ^^^^^^^^^^^^^^^^^^^^
+   |
+help: try removing this bound
+   |
+LL -     fn f2() -> impl Trait1<i32, U = i64> + Trait2<i32> {}
+LL +     fn f2() -> impl Trait2<i32, U = i64> {}
+   |
+
+error: this bound is already specified as the supertrait of `Trait4<i8, X = i32>`
+  --> tests/ui/implied_bounds_in_impls.rs:136:21
+   |
+LL |     fn f3() -> impl Trait3<i8, i16, i64, X = i32, Y = i128> + Trait4<i8, X = i32> {}
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: try removing this bound
+   |
+LL -     fn f3() -> impl Trait3<i8, i16, i64, X = i32, Y = i128> + Trait4<i8, X = i32> {}
+LL +     fn f3() -> impl Trait4<i8, X = i32, Y = i128> {}
    |
 
 error: aborting due to 23 previous errors

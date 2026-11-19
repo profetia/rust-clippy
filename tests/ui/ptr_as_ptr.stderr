@@ -1,17 +1,11 @@
 error: `as` casting between raw pointers without changing their constness
-  --> tests/ui/ptr_as_ptr.rs:18:33
-   |
-LL |         *unsafe { Box::from_raw(Box::into_raw(Box::new(o)) as *mut super::issue_11278_a::T<String>) }
-   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try `pointer::cast`, a safer alternative: `Box::into_raw(Box::new(o)).cast::<super::issue_11278_a::T<String>>()`
-   |
-   = note: `-D clippy::ptr-as-ptr` implied by `-D warnings`
-   = help: to override `-D warnings` add `#[allow(clippy::ptr_as_ptr)]`
-
-error: `as` casting between raw pointers without changing their constness
   --> tests/ui/ptr_as_ptr.rs:28:13
    |
 LL |     let _ = ptr as *const i32;
    |             ^^^^^^^^^^^^^^^^^ help: try `pointer::cast`, a safer alternative: `ptr.cast::<i32>()`
+   |
+   = note: `-D clippy::ptr-as-ptr` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::ptr_as_ptr)]`
 
 error: `as` casting between raw pointers without changing their constness
   --> tests/ui/ptr_as_ptr.rs:30:13
@@ -48,6 +42,24 @@ error: `as` casting between raw pointers without changing their constness
    |
 LL |     let _ = mut_ptr as *mut i32;
    |             ^^^^^^^^^^^^^^^^^^^ help: try `pointer::cast`, a safer alternative: `mut_ptr.cast::<i32>()`
+
+error: `as` casting between raw pointers without changing their constness
+  --> tests/ui/ptr_as_ptr.rs:228:43
+   |
+LL |         let _: fn() = std::mem::transmute(std::ptr::null::<()>() as *const u8);
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try call directly: `std::ptr::null::<u8>()`
+
+error: `as` casting between raw pointers without changing their constness
+  --> tests/ui/ptr_as_ptr.rs:235:16
+   |
+LL |     let _ptr = std::ptr::addr_of_mut!(*b) as *mut ();
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try `pointer::cast`, a safer alternative: `std::ptr::addr_of_mut!(*b).cast::<()>()`
+
+error: `as` casting between raw pointers without changing their constness
+  --> tests/ui/ptr_as_ptr.rs:18:33
+   |
+LL |         *unsafe { Box::from_raw(Box::into_raw(Box::new(o)) as *mut super::issue_11278_a::T<String>) }
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try `pointer::cast`, a safer alternative: `Box::into_raw(Box::new(o)).cast::<super::issue_11278_a::T<String>>()`
 
 error: `as` casting between raw pointers without changing their constness
   --> tests/ui/ptr_as_ptr.rs:90:9
@@ -192,18 +204,6 @@ error: `as` casting between raw pointers without changing their constness
    |
 LL |         core::ptr::null() as _
    |         ^^^^^^^^^^^^^^^^^^^^^^ help: try call directly: `core::ptr::null()`
-
-error: `as` casting between raw pointers without changing their constness
-  --> tests/ui/ptr_as_ptr.rs:228:43
-   |
-LL |         let _: fn() = std::mem::transmute(std::ptr::null::<()>() as *const u8);
-   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try call directly: `std::ptr::null::<u8>()`
-
-error: `as` casting between raw pointers without changing their constness
-  --> tests/ui/ptr_as_ptr.rs:235:16
-   |
-LL |     let _ptr = std::ptr::addr_of_mut!(*b) as *mut ();
-   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try `pointer::cast`, a safer alternative: `std::ptr::addr_of_mut!(*b).cast::<()>()`
 
 error: aborting due to 34 previous errors
 

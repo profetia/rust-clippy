@@ -43,98 +43,6 @@ LL ~     stdin.lock().lines().next().unwrap().unwrap()
    |
 
 error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:105:9
-   |
-LL |         let ret = value.borrow().baz();
-   |         ------------------------------- unnecessary `let` binding
-LL |         ret
-   |         ^^^
-   |
-help: return the expression directly
-   |
-LL ~         
-LL ~         value.borrow().baz()
-   |
-
-error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:116:9
-   |
-LL |         let ret = f(|| value.borrow().baz())();
-   |         --------------------------------------- unnecessary `let` binding
-LL |         ret
-   |         ^^^
-   |
-help: return the expression directly
-   |
-LL ~         
-LL ~         f(|| value.borrow().baz())()
-   |
-
-error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:148:13
-   |
-LL |             let value = some_foo(&x).value();
-   |             --------------------------------- unnecessary `let` binding
-LL |             value
-   |             ^^^^^
-   |
-help: return the expression directly
-   |
-LL ~             
-LL ~             some_foo(&x).value()
-   |
-
-error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:155:13
-   |
-LL |             let value = Foo::new(&x).value();
-   |             --------------------------------- unnecessary `let` binding
-LL |             value
-   |             ^^^^^
-   |
-help: return the expression directly
-   |
-LL ~             
-LL ~             Foo::new(&x).value()
-   |
-
-error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:177:13
-   |
-LL |             let clone = Arc::clone(&self.foo);
-   |             ---------------------------------- unnecessary `let` binding
-LL |             clone
-   |             ^^^^^
-   |
-help: return the expression directly
-   |
-LL ~             
-LL ~             (Arc::clone(&self.foo)) as _
-   |
-
-error: returning the result of a `let` binding from a block
-  --> tests/ui/let_and_return.rs:196:13
-   |
-LL | /             let result = match self {
-LL | |                 E::A(x) => x,
-LL | |                 E::B(x) => x,
-LL | |             };
-   | |______________- unnecessary `let` binding
-LL |
-LL |               result
-   |               ^^^^^^
-   |
-help: return the expression directly
-   |
-LL ~             
-LL |
-LL ~             (match self {
-LL +                 E::A(x) => x,
-LL +                 E::B(x) => x,
-LL +             }) as _
-   |
-
-error: returning the result of a `let` binding from a block
   --> tests/ui/let_and_return.rs:222:9
    |
 LL |         let s = if true { "a".to_string() } else { "b".to_string() } + "c";
@@ -236,6 +144,98 @@ help: return the expression directly
    |
 LL ~     
 LL ~     plus_one!(x)
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:105:9
+   |
+LL |         let ret = value.borrow().baz();
+   |         ------------------------------- unnecessary `let` binding
+LL |         ret
+   |         ^^^
+   |
+help: return the expression directly
+   |
+LL ~         
+LL ~         value.borrow().baz()
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:116:9
+   |
+LL |         let ret = f(|| value.borrow().baz())();
+   |         --------------------------------------- unnecessary `let` binding
+LL |         ret
+   |         ^^^
+   |
+help: return the expression directly
+   |
+LL ~         
+LL ~         f(|| value.borrow().baz())()
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:148:13
+   |
+LL |             let value = some_foo(&x).value();
+   |             --------------------------------- unnecessary `let` binding
+LL |             value
+   |             ^^^^^
+   |
+help: return the expression directly
+   |
+LL ~             
+LL ~             some_foo(&x).value()
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:155:13
+   |
+LL |             let value = Foo::new(&x).value();
+   |             --------------------------------- unnecessary `let` binding
+LL |             value
+   |             ^^^^^
+   |
+help: return the expression directly
+   |
+LL ~             
+LL ~             Foo::new(&x).value()
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:177:13
+   |
+LL |             let clone = Arc::clone(&self.foo);
+   |             ---------------------------------- unnecessary `let` binding
+LL |             clone
+   |             ^^^^^
+   |
+help: return the expression directly
+   |
+LL ~             
+LL ~             (Arc::clone(&self.foo)) as _
+   |
+
+error: returning the result of a `let` binding from a block
+  --> tests/ui/let_and_return.rs:196:13
+   |
+LL | /             let result = match self {
+LL | |                 E::A(x) => x,
+LL | |                 E::B(x) => x,
+LL | |             };
+   | |______________- unnecessary `let` binding
+LL |
+LL |               result
+   |               ^^^^^^
+   |
+help: return the expression directly
+   |
+LL ~             
+LL |
+LL ~             (match self {
+LL +                 E::A(x) => x,
+LL +                 E::B(x) => x,
+LL +             }) as _
    |
 
 error: aborting due to 16 previous errors

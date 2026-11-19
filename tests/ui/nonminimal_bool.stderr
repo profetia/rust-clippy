@@ -283,18 +283,6 @@ LL +     if a >= 2.0 || b {
    |
 
 error: this boolean expression can be simplified
-  --> tests/ui/nonminimal_bool.rs:231:12
-   |
-LL |         if !(matches!(ty, TyKind::Ref(_, _, _)) && !is_mutable(&expr)) {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-help: try
-   |
-LL -         if !(matches!(ty, TyKind::Ref(_, _, _)) && !is_mutable(&expr)) {
-LL +         if !matches!(ty, TyKind::Ref(_, _, _)) || is_mutable(&expr) {
-   |
-
-error: this boolean expression can be simplified
   --> tests/ui/nonminimal_bool.rs:251:8
    |
 LL |     if !S != true {}
@@ -305,6 +293,18 @@ error: inequality checks against true can be replaced by a negation
    |
 LL |     if !S != true {}
    |        ^^^^^^^^^^ help: try: `!!S`
+
+error: this boolean expression can be simplified
+  --> tests/ui/nonminimal_bool.rs:231:12
+   |
+LL |         if !(matches!(ty, TyKind::Ref(_, _, _)) && !is_mutable(&expr)) {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: try
+   |
+LL -         if !(matches!(ty, TyKind::Ref(_, _, _)) && !is_mutable(&expr)) {
+LL +         if !matches!(ty, TyKind::Ref(_, _, _)) || is_mutable(&expr) {
+   |
 
 error: aborting due to 32 previous errors
 

@@ -1,3 +1,11 @@
+error: equal expressions as operands to `/`
+  --> tests/ui/cast.rs:479:6
+   |
+LL |     (y / y * y * -2) as u16;
+   |      ^^^^^
+   |
+   = note: `#[deny(clippy::eq_op)]` on by default
+
 error: casting `i32` to `f32` may cause a loss of precision (`i32` is 32 bits wide, but `f32`'s mantissa is only 23 bits wide)
   --> tests/ui/cast.rs:23:5
    |
@@ -569,14 +577,6 @@ error: casting `i16` to `u16` may lose the sign of the value
 LL |     (y / y * y * -2) as u16;
    |     ^^^^^^^^^^^^^^^^^^^^^^^ help: if this is intentional, use `cast_unsigned()` instead: `(y / y * y * -2).cast_unsigned()`
 
-error: equal expressions as operands to `/`
-  --> tests/ui/cast.rs:479:6
-   |
-LL |     (y / y * y * -2) as u16;
-   |      ^^^^^
-   |
-   = note: `#[deny(clippy::eq_op)]` on by default
-
 error: casting `i16` to `u16` may lose the sign of the value
   --> tests/ui/cast.rs:483:5
    |
@@ -755,18 +755,6 @@ LL +     u8::try_from(255 % 999999u64);
    |
 
 error: casting `u8` to `i8` may wrap around the value
-  --> tests/ui/cast.rs:576:13
-   |
-LL |         _ = 1u8 as i8;
-   |             ^^^^^^^^^ help: if this is intentional, use `cast_signed()` instead: `1u8.cast_signed()`
-
-error: casting `u8` to `i8` may wrap around the value
-  --> tests/ui/cast.rs:581:13
-   |
-LL |         _ = 1u8 as i8;
-   |             ^^^^^^^^^
-
-error: casting `u8` to `i8` may wrap around the value
   --> tests/ui/cast.rs:589:13
    |
 LL |         _ = val? as i8;
@@ -784,6 +772,18 @@ help: ... or use `try_from` and handle the error accordingly
 LL -     let _ = cast_from_macro!() as i32;
 LL +     let _ = i32::try_from(cast_from_macro!());
    |
+
+error: casting `u8` to `i8` may wrap around the value
+  --> tests/ui/cast.rs:576:13
+   |
+LL |         _ = 1u8 as i8;
+   |             ^^^^^^^^^ help: if this is intentional, use `cast_signed()` instead: `1u8.cast_signed()`
+
+error: casting `u8` to `i8` may wrap around the value
+  --> tests/ui/cast.rs:581:13
+   |
+LL |         _ = 1u8 as i8;
+   |             ^^^^^^^^^
 
 error: aborting due to 96 previous errors
 
