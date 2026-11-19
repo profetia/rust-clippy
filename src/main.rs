@@ -6,10 +6,12 @@
 
 extern crate rustc_driver;
 
-use std::env;
+use std::collections::HashMap;
+use std::ffi::OsString;
 use std::io::Write as _;
 use std::path::PathBuf;
-use std::process::{self, Command, exit};
+use std::process::{self, Command, Stdio, exit};
+use std::{env, fs};
 
 fn show_help() {
     if writeln!(&mut anstream::stdout().lock(), "{}", help_message()).is_err() {
@@ -120,8 +122,69 @@ impl ClippyCmd {
             .arg(self.cargo_subcommand)
             .args(&self.args);
 
+        if self.cargo_subcommand == "check" {
+            match library_roots(&cmd) {
+                Some(roots) => cmd.env(clippy_lints::LIBRARY_ROOTS_ENV_VAR, roots),
+                None => cmd.env_remove(clippy_lints::LIBRARY_ROOTS_ENV_VAR),
+            };
+        }
+
         cmd
     }
+}
+
+/// The library crate roots that `cmd` (a `cargo check`) compiles both with and without `--test`,
+/// joined like `PATH`. Reads cargo's unit graph, an unstable option, so this is `None` where cargo
+/// does not offer it.
+///
+/// Cargo's unit graph shows a library's unit-test build with the same mode, profile and features as
+/// the library itself, so a library planned more than once with the same package, target, platform
+/// and features is taken to be planned both ways.
+fn library_roots(cmd: &Command) -> Option<OsString> {
+    let mut plan = Command::new(cmd.get_program());
+    plan.args(cmd.get_args())
+        .args(["--unit-graph", "-Z", "unstable-options"])
+        .stdin(Stdio::null())
+        .stderr(Stdio::null());
+    for (key, value) in cmd.get_envs() {
+        match value {
+            Some(value) => plan.env(key, value),
+            None => plan.env_remove(key),
+        };
+    }
+    let output = plan.output().ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let graph: serde_json::Value = serde_json::from_slice(&output.stdout).ok()?;
+
+    let mut plans: HashMap<String, (usize, &str)> = HashMap::new();
+    for unit in graph.get("units")?.as_array()? {
+        let target = unit.get("target")?;
+        let is_library = target.get("kind")?.as_array()?.iter().any(|kind| {
+            matches!(
+                kind.as_str(),
+                Some("lib" | "rlib" | "dylib" | "cdylib" | "staticlib" | "proc-macro")
+            )
+        });
+        if unit.get("mode")?.as_str()? != "check" || !is_library {
+            continue;
+        }
+        let key = serde_json::json!([
+            unit.get("pkg_id"),
+            target.get("name"),
+            unit.get("platform"),
+            unit.get("features")
+        ])
+        .to_string();
+        plans.entry(key).or_insert((0, target.get("src_path")?.as_str()?)).0 += 1;
+    }
+
+    let roots = plans
+        .into_values()
+        .filter(|&(count, _)| count > 1)
+        .filter_map(|(_, root)| fs::canonicalize(root).ok());
+    env::join_paths(roots).ok()
 }
 
 fn process<I>(old_args: I) -> Result<(), i32>

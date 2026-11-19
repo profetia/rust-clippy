@@ -488,12 +488,14 @@ pub fn register_lint_passes(store: &mut rustc_lint::LintStore, conf: &'static Co
             let is_active = |lints: &rustc_lint::LintVec| is_lint_pass_required(skippable_lints, lints);
             CombinedLateLintModPass::active(&is_active)
         });
-        Box::new(CombinedLateLintModPass::new(
-            tcx,
-            conf,
-            mod_format_args_storage.clone(),
-            active_passes,
-        ))
+        let pass = CombinedLateLintModPass::new(tcx, conf, mod_format_args_storage.clone(), active_passes);
+        // Read through a tracked query, so cached module results depend on it.
+        let pass: Box<dyn rustc_lint::LateLintPass<'_>> = if tcx.env_var_os(TEST_CODE_ONLY_ENV_VAR.as_ref()).is_some() {
+            Box::new(TestOnlyLateLintModPass { pass, depth: 0 })
+        } else {
+            Box::new(pass)
+        };
+        pass
     }));
 
     store.register_late_lint_pass(Box::new(move |tcx: TyCtxt<'_>| {
@@ -902,3 +904,100 @@ rustc_lint::late_lint_methods!(
         // add late passes here, used by `cargo dev new_lint`
     ]]
 );
+
+/// Crate roots that `cargo clippy` plans to compile both with and without `--test`, joined like
+/// `PATH`. Set by `cargo clippy`; read by `clippy-driver`.
+pub const LIBRARY_ROOTS_ENV_VAR: &str = "CLIPPY_LIBRARY_ROOTS";
+
+/// Set by `clippy-driver` in a `--test` compilation of a root listed in [`LIBRARY_ROOTS_ENV_VAR`]:
+/// the code it shares with the compilation without `--test` is linted there, so the per-module
+/// pass lints only code that exists because of `--test`.
+pub const TEST_CODE_ONLY_ENV_VAR: &str = "CLIPPY_TEST_CODE_ONLY";
+
+/// The per-module pass restricted to code that exists only because of `--test`
+/// ([`clippy_utils::is_test_only`]), plus `items_after_test_module` on every module, which reports
+/// on the module that contains the test module.
+///
+/// rustc enters and leaves every node's attributes (`check_attributes` and `check_attributes_post`)
+/// around all other callbacks for that node, starting with the module itself; `depth` counts the
+/// nodes entered since the outermost test-only one.
+struct TestOnlyLateLintModPass<'tcx> {
+    pass: CombinedLateLintModPass<'tcx>,
+    depth: u32,
+}
+
+#[allow(rustc::lint_pass_impl_without_macro)]
+impl rustc_lint::LintPass for TestOnlyLateLintModPass<'_> {
+    fn name(&self) -> &'static str {
+        "TestOnlyLateLintModPass"
+    }
+    fn get_lints(&self) -> rustc_lint::LintVec {
+        self.pass.get_lints()
+    }
+}
+
+/// Marks the `#[expect]`s of Clippy lints within `owner` as fulfilled. The owner's code is shared
+/// with the compilation without `--test`, which lints it and checks these expectations; without
+/// this, this compilation would report them as unfulfilled.
+fn fulfill_clippy_expectations(cx: &rustc_lint::LateContext<'_>, owner: rustc_hir::OwnerId) {
+    for (id, expectation) in &cx.tcx.shallow_lint_levels_on(owner).expectations {
+        if expectation.lint_tool == Some(clippy_utils::sym::clippy) {
+            cx.tcx.dcx().fulfill_expectation(*id);
+        }
+    }
+}
+
+macro_rules! test_only_late_lint_mod_pass_method {
+    (check_attributes, ($($param:ident: $arg:ty),*)) => {
+        fn check_attributes(&mut self, cx: &rustc_lint::LateContext<'tcx>, $($param: $arg),*) {
+            let id = cx.last_node_with_lint_attrs;
+            if self.depth > 0 {
+                self.depth += 1;
+                rustc_lint::LateLintPass::check_attributes(&mut self.pass, cx, $($param),*);
+            } else if id.local_id == rustc_hir::ItemLocalId::ZERO {
+                // A test-only node below item level is reached only through a test-only owner.
+                if clippy_utils::is_test_only(cx.tcx, id) {
+                    self.depth += 1;
+                    rustc_lint::LateLintPass::check_attributes(&mut self.pass, cx, $($param),*);
+                } else {
+                    fulfill_clippy_expectations(cx, id.owner);
+                }
+            }
+        }
+    };
+    (check_attributes_post, ($($param:ident: $arg:ty),*)) => {
+        fn check_attributes_post(&mut self, cx: &rustc_lint::LateContext<'tcx>, $($param: $arg),*) {
+            if self.depth > 0 {
+                rustc_lint::LateLintPass::check_attributes_post(&mut self.pass, cx, $($param),*);
+                self.depth -= 1;
+            }
+        }
+    };
+    (check_mod, ($($param:ident: $arg:ty),*)) => {
+        fn check_mod(&mut self, cx: &rustc_lint::LateContext<'tcx>, $($param: $arg),*) {
+            if self.depth > 0 {
+                rustc_lint::LateLintPass::check_mod(&mut self.pass, cx, $($param),*);
+            } else if let Some(pass) = &mut self.pass.ItemsAfterTestModule {
+                rustc_lint::LateLintPass::check_mod(pass, cx, $($param),*);
+            }
+        }
+    };
+    ($name:ident, ($($param:ident: $arg:ty),*)) => {
+        #[inline(always)]
+        fn $name(&mut self, cx: &rustc_lint::LateContext<'tcx>, $($param: $arg),*) {
+            if self.depth > 0 {
+                rustc_lint::LateLintPass::$name(&mut self.pass, cx, $($param),*);
+            }
+        }
+    };
+}
+
+macro_rules! test_only_late_lint_mod_pass {
+    ([], [$($(#[$attr:meta])* fn $name:ident($($param:ident: $arg:ty),*);)*]) => {
+        impl<'tcx> rustc_lint::LateLintPass<'tcx> for TestOnlyLateLintModPass<'tcx> {
+            $(test_only_late_lint_mod_pass_method!($name, ($($param: $arg),*));)*
+        }
+    };
+}
+
+rustc_lint::late_lint_methods!(test_only_late_lint_mod_pass, []);

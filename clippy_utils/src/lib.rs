@@ -2458,6 +2458,38 @@ pub fn is_in_test(tcx: TyCtxt<'_>, hir_id: HirId) -> bool {
     is_in_test_function(tcx, hir_id) || is_in_cfg_test(tcx, hir_id) || is_in_integration_test_file(tcx)
 }
 
+/// Checks if the node exists only because the crate is compiled with `--test`: it or one of its
+/// parents is a `#[test]` function, or is kept by a `#[cfg]` that is false without `test`.
+///
+/// Unlike [`is_in_cfg_test`], this evaluates the whole predicate, so `#[cfg(any(test, feature =
+/// "x"))]` is test-only only when the feature is off.
+pub fn is_test_only(tcx: TyCtxt<'_>, id: HirId) -> bool {
+    once(id).chain(tcx.hir_parent_id_iter(id)).any(|id| {
+        find_attr!(tcx, id, CfgTrace(cfgs) => cfgs)
+            .is_some_and(|cfgs| cfgs.iter().any(|(cfg, _)| !cfg_holds_without_test(tcx, cfg)))
+            || (id.local_id == hir::ItemLocalId::ZERO && is_test_function(tcx, id.owner.def_id))
+    })
+}
+
+/// Evaluates a `cfg` predicate in this compilation's configuration with `test` unset.
+fn cfg_holds_without_test(tcx: TyCtxt<'_>, cfg: &CfgEntry) -> bool {
+    match cfg {
+        CfgEntry::All(subs, _) => subs.iter().all(|sub| cfg_holds_without_test(tcx, sub)),
+        CfgEntry::Any(subs, _) => subs.iter().any(|sub| cfg_holds_without_test(tcx, sub)),
+        CfgEntry::Not(sub, _) => !cfg_holds_without_test(tcx, sub),
+        CfgEntry::Bool(b, _) => *b,
+        CfgEntry::NameValue { name, value, .. } => *name != sym::test && tcx.sess.config.contains(&(*name, *value)),
+        CfgEntry::Version(min_version, _) => min_version.is_some_and(|min_version| {
+            let current = rustc_attr_ir::RustcVersion::current_overridable();
+            if tcx.sess.opts.unstable_opts.assume_incomplete_release {
+                current > min_version
+            } else {
+                current >= min_version
+            }
+        }),
+    }
+}
+
 /// Check if the node is in an integration test file (i.e. under `tests/`).
 fn is_in_integration_test_file(tcx: TyCtxt<'_>) -> bool {
     if let Input::File(ref path) = tcx.sess.io.input
