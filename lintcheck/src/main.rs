@@ -41,6 +41,18 @@ use input::read_crates;
 use output::{ClippyCheckOutput, ClippyWarning, RustcIce};
 use rayon::prelude::*;
 
+const PERF_RECORD_ARGS: &[&str] = &[
+    "record",
+    "-e",
+    "instructions",
+    "--call-graph",
+    "dwarf,65528",
+    "-m",
+    "1024",
+    "--quiet",     // Do not tamper with lintcheck's normal output
+    "--freq=3000", // Slow down program to capture all events
+];
+
 #[must_use]
 pub fn target_dir() -> String {
     env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| "target".to_owned())
@@ -121,22 +133,11 @@ impl Crate {
 
         let mut cmd;
 
-        if config.perf {
+        if config.perf && !config.perf_crate_only {
             cmd = Command::new("perf");
             let perf_data_filename = get_perf_data_filename(&self.path);
-            cmd.args(&[
-                "record",
-                "-e",
-                "instructions",
-                "--call-graph",
-                "dwarf",
-                "--quiet",     // Do not tamper with lintcheck's normal output
-                "--freq=3000", // Slow down program to capture all events
-                "-o",
-                &perf_data_filename,
-                "--",
-                "cargo",
-            ]);
+            cmd.args(PERF_RECORD_ARGS)
+                .args(["-o", &perf_data_filename, "--", "cargo"]);
         } else {
             cmd = Command::new("cargo");
         }
@@ -176,13 +177,19 @@ impl Crate {
         }
 
         let shared_target_dir = shared_target_dir(&format!("_{thread_index:?}"));
-        let all_output = cmd
-            // use the looping index to create individual target dirs
-            .env("CARGO_TARGET_DIR", shared_target_dir.as_os_str())
+        // use the looping index to create individual target dirs
+        cmd.env("CARGO_TARGET_DIR", shared_target_dir.as_os_str());
+        if config.perf_crate_only {
+            // The wrapper is set to `lintcheck` itself so it can record only the crate's own targets with `perf`
+            // (see `crate::driver`)
+            cmd.env("RUSTC_WORKSPACE_WRAPPER", env::current_exe().unwrap())
+                .env("CLIPPY_DRIVER", clippy_driver_path)
+                .env("LINTCHECK_PERF", next_perf_data_number(&self.path).to_string());
+        } else {
             // Roughly equivalent to `cargo clippy`/`cargo clippy --fix`
-            .env("RUSTC_WORKSPACE_WRAPPER", clippy_driver_path)
-            .output()
-            .unwrap();
+            cmd.env("RUSTC_WORKSPACE_WRAPPER", clippy_driver_path);
+        }
+        let all_output = cmd.output().unwrap();
         let stdout = String::from_utf8_lossy(&all_output.stdout);
         let stderr = String::from_utf8_lossy(&all_output.stderr);
         let status = &all_output.status;
@@ -275,6 +282,7 @@ fn build_clippy(release_build: bool) -> String {
 
     if release_build {
         build_cmd.env("CARGO_PROFILE_RELEASE_DEBUG", "true");
+        build_cmd.env("CARGO_PROFILE_RELEASE_RUSTFLAGS", "-Clink-arg=-Wl,--no-rosegment");
     }
 
     let output = build_cmd.stderr(Stdio::inherit()).output().unwrap();
@@ -290,6 +298,11 @@ fn main() {
     // We're being executed as a `RUSTC_WRAPPER` as part of `--recursive`
     if let Ok(addr) = env::var("LINTCHECK_SERVER") {
         driver::drive(&addr);
+    }
+
+    // We're being executed as a `RUSTC_WORKSPACE_WRAPPER` as part of `--perf-crate-only`
+    if let Ok(run_number) = env::var("LINTCHECK_PERF") {
+        driver::drive_perf(&run_number);
     }
 
     // assert that we launch lintcheck from the repo root (via cargo lintcheck)
@@ -454,33 +467,37 @@ fn lintcheck(config: LintcheckConfig) {
     fs::write(&config.lintcheck_results_path, text).unwrap();
 }
 
-/// Traverse a directory looking for `perf.data.<number>` files, and adds one
-/// to the most recent of those files, returning the new most recent `perf.data`
-/// file name.
+/// Returns the new most recent `perf.data` file name.
 fn get_perf_data_filename(source_path: &Path) -> String {
     if source_path.join("perf.data").exists() {
-        let mut max_number = 0;
-        fs::read_dir(source_path)
-            .unwrap()
-            .filter_map(Result::ok)
-            .filter(|path| {
-                path.file_name()
-                    .as_os_str()
-                    .to_string_lossy() // We don't care about data loss, as we're checking for equality
-                    .starts_with("perf.data")
-            })
-            .for_each(|path| {
-                let file_name = path.file_name();
-                let file_name = file_name.as_os_str().to_str().unwrap().split('.').next_back().unwrap();
-                if let Ok(parsed_file_name) = file_name.parse::<usize>()
-                    && parsed_file_name >= max_number
-                {
-                    max_number = parsed_file_name + 1;
-                }
-            });
-        return format!("perf.data.{max_number}");
+        return format!("perf.data.{}", next_perf_data_number(source_path));
     }
     String::from("perf.data")
+}
+
+/// Traverse a directory looking for `perf.data.<number>` files, and adds one
+/// to the most recent of those files, returning the new most recent number.
+fn next_perf_data_number(source_path: &Path) -> usize {
+    let mut max_number = 0;
+    fs::read_dir(source_path)
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|path| {
+            path.file_name()
+                .as_os_str()
+                .to_string_lossy() // We don't care about data loss, as we're checking for equality
+                .starts_with("perf.data")
+        })
+        .for_each(|path| {
+            let file_name = path.file_name();
+            let file_name = file_name.as_os_str().to_str().unwrap().split('.').next_back().unwrap();
+            if let Ok(parsed_file_name) = file_name.parse::<usize>()
+                && parsed_file_name >= max_number
+            {
+                max_number = parsed_file_name + 1;
+            }
+        });
+    max_number
 }
 
 /// Returns the path to the Clippy project directory

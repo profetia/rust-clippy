@@ -55,6 +55,10 @@ pub(crate) struct LintcheckConfig {
     /// `target/lintcheck/sources/<package>-<version>/perf.data`
     #[clap(long)]
     pub perf: bool,
+    /// With --perf, only record the compilation of each crate's own lib and bin targets,
+    /// producing one `perf.data.<crate-name>-<lib|bin>.<n>` file per target
+    #[clap(long, requires("perf"))]
+    pub perf_crate_only: bool,
     #[command(subcommand)]
     pub subcommand: Option<Commands>,
 }
